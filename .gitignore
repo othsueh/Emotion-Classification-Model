@@ -1,0 +1,9 @@
+# Folder
+__pycache__
+FeatureExtraction
+net/__pycache__
+
+# File
+config.toml
+normal.py
+PerformanceLog/*.pth

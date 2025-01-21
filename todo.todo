@@ -1,0 +1,18 @@
+Make train.py:
+    ✔ Load data (@dataset_create.py) @done(25-01-18 16:55)
+    ✔ Implemnt mixup (@scratch.ipynb) @done(25-01-18 17:15)
+    ✔ Write the training loop @started(25-01-18 17:15) @done(25-01-18 17:26) @lasted(11m56s)
+    ✘ transform @cancelled(25-01-18 18:10)
+    ✔ Write architecture of model @started(25-01-18 21:21) @done(25-01-18 22:49) @lasted(1h28m48s)
+Tidy the code: 
+    ✔ Rewrite the part that with wrong name @done(25-01-20 14:52)
+    ✔ Rewrite the train loader, make it more clean @started(25-01-20 14:54) @done(25-01-21 18:37) @lasted(1d3h43m24s)
+        ✔ Write data preprocessing function @done(25-01-21 18:23)
+        ✔ Generalize report function @done(25-01-20 15:43)
+        ✔ Make unify file name @done(25-01-20 15:43)
+        ✔ Make confusion matrix only plot in last epoch @done(25-01-20 15:43)
+        ✔ Plot logic in report function check @done(25-01-21 21:58)
+    ✔ Rename old model file @done(25-01-20 15:45)
+    ✔ Add more parameter to training report (batch size, learning rate, epoch) @done(25-01-21 21:44)
+    ✔ Write README.md @done(25-01-21 21:58)
+

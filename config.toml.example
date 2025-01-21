@@ -1,0 +1,15 @@
+PATH_TO_PRETRAINED_MODELS = "./models/"
+PATH_TO_PERFORMACE = "./PerformanceLog/"
+LLM = ["llama-2-7b","qwen2_5-7b"]
+LM = ["roberta-large","roberta-base","t5-base"]
+WHISPER = ['whisper-large-v3']
+AM = ['wavlm-large','hubert-xlarge-ls960-ft','wav2vec2-large-960h','wav2vec2-large-960h-lv60-self']
+
+[MSPPODCAST]
+PATH_TO_TRANSCRIPT=''
+PATH_TO_AUDIO=''
+PATH_TO_LABEL=''
+PATH_TO_FEATURE=''
+PATH_TO_PARTITION=''
+PATH_TO_README=''
+PATH_TO_TEST=''
