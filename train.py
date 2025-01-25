@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 import random
 from sklearn.metrics import f1_score, accuracy_score
-from torch.utils.data import DataLoader, Dataset, IterableDataset
+from torch.utils.data import DataLoader
 
 from utils import *
 from display import *
@@ -17,14 +17,14 @@ corpus = "MSPPODCAST"
 text_feature_extractor = 'roberta-large-UTT'
 audio_feature_extractor = 'whisper-large-v3-UTT'
 seed = 42
-batch = 64
+batch = 16
 epoch = 20
 alpha = 0.4 # Mixup alpha
 input_dim = 2304
 leanring_rate = 1e-3
 
 # Model setup
-model = net.SimpleModel(input_dim, dropout=0.5).cuda()
+model = net.SimpleModel(input_dim, dropout=0.3).cuda()
 net_name = model.__class__.__name__
 
 # Weighted CrossEntropyLoss
@@ -216,5 +216,5 @@ if __name__ == "__main__":
                          train_acc, val_acc, start_time)
     
     # save model parameters
-    torch.save(model.state_dict(), os.path.join(config['PATH_TO_PERFORMACE'],f'{file_uni_name}_model.pth'))
+    torch.save(model.state_dict(), os.path.join(config['PATH_TO_CKPT'],f'{file_uni_name}_model.pth'))
 

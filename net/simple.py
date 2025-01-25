@@ -10,17 +10,17 @@ class SimpleModel(nn.Module):
         hidden_dim = 1024
         
         # Pooling layer
-        # self.pool = nn.AdaptiveAvgPool1d(1024)
+        self.pool = nn.AdaptiveAvgPool1d(1024)
         
         # Layer normalization
-        self.norm1 = nn.LayerNorm(input_dim)
-        self.norm2 = nn.LayerNorm(input_dim)
+        self.norm1 = nn.LayerNorm(hidden_dim)
+        self.norm2 = nn.LayerNorm(hidden_dim)
         
         # Transformer layer
         encoder_layer = nn.TransformerEncoderLayer(
-            d_model=input_dim,
+            d_model=hidden_dim,
             nhead=8,
-            dim_feedforward=2048,
+            dim_feedforward=1024,
             dropout=drop,
             activation='gelu',
             batch_first=True
@@ -28,13 +28,13 @@ class SimpleModel(nn.Module):
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=2)
         
         # MLP layers
-        self.fc1 = nn.Linear(input_dim, 512)
+        self.fc1 = nn.Linear(hidden_dim, 512)
         self.dropout1 = nn.Dropout(drop)
         self.fc2 = nn.Linear(512, 8)
         
     def forward(self, x):
         # Apply pooling and reshape for transformer
-        # x = self.pool(x)
+        x = self.pool(x)
         x = x.unsqueeze(1)  # Add sequence dimension
         
         # Apply transformer with residual connection

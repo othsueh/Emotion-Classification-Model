@@ -2,6 +2,7 @@
 __pycache__
 FeatureExtraction
 net/__pycache__
+ckpt
 
 # File
 config.toml

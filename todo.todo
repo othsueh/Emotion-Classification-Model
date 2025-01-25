@@ -15,4 +15,7 @@ Tidy the code:
     ✔ Rename old model file @done(25-01-20 15:45)
     ✔ Add more parameter to training report (batch size, learning rate, epoch) @done(25-01-21 21:44)
     ✔ Write README.md @done(25-01-21 21:58)
+Write test code:
+    ✔ Write the load model part @started(25-01-25 20:09) @done(25-01-25 20:15) @lasted(6m24s)
+    ☐ Write the evaluation part
 

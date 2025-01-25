@@ -21,6 +21,11 @@ def onehot_MSPPODCAST(emotion):
 
 def indexToEmotion(index):
     emotion_codes = ["A", "S", "H", "U", "F", "D", "C", "N"]
+    emotion_code = emotion_codes[index]
+    return emotion_code
+
+def indexToFullEmotion(index):
+    emotion_codes = ["A", "S", "H", "U", "F", "D", "C", "N"]
     emotions = ["Angry", "Sad", "Happy", "Surprise", "Fear", "Disgust", "Contempt", "Neutral"]
     mapping = {e: emotions[i] for i, e in enumerate(emotion_codes)}
     emotion_code = emotion_codes[index]
@@ -34,9 +39,11 @@ def get_feature_dir(corpus,model):
 def default_transform(data,label):
     data["text"] = torch.tensor(data["text"], dtype=torch.float32)
     data["audio"] = torch.tensor(data["audio"], dtype=torch.float32)
-    label["category"] = torch.tensor(label["category"], dtype=torch.float32)
-    label["avd"] = torch.tensor(label["avd"], dtype=torch.float32)
-    return data, label
+    if (label is not None):
+        label["category"] = torch.tensor(label["category"], dtype=torch.float32)
+        label["avd"] = torch.tensor(label["avd"], dtype=torch.float32)
+        return data, label
+    return data
 
 def corpus_split(corpus):
     train_df = corpus[corpus["Split_Set"] == "Train"]
@@ -116,6 +123,47 @@ class MSPDataset(IterableDataset):
             "avd": avd
         }
         return data, label
+class MSPTestset(Dataset):
+    def __init__(self, df, text_path, audio_path, transform=default_transform):
+        self.df = df
+        self.text_path = text_path
+        self.audio_path = audio_path
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, idx):
+        row = self.df.iloc[idx]
+        try:
+            data = self._load_data(self, row, self.text_path, self.audio_path)
+            if self.transform:
+                data = self.transform(data)
+            return data
+        except Exception as e:
+            print(f"Error loading file {row['FileName']}: {e}")
+            return None
+
+    def _load_data(self, row, text_path, audio_path):
+        name = row["FileName"]
+        text_file = os.path.join(text_path, name + '.npy')
+        audio_file = os.path.join(audio_path, name + '.npy')
+        
+        # Check if files exist before loading
+        if not os.path.exists(text_file):
+            raise FileNotFoundError(f"Text feature file not found: {text_file}")
+        if not os.path.exists(audio_file):
+            raise FileNotFoundError(f"Audio feature file not found: {audio_file}")
+
+        text_features = np.load(text_file)
+        audio_features = np.load(audio_file)
+
+        data = {
+            "name": name,
+            "text" : text_features,
+            "audio" : audio_features,
+        }
+        return data
 
 def mixup_data(text, audio, label, alpha=1.0):
 
