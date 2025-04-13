@@ -3,6 +3,7 @@ __pycache__
 FeatureExtraction
 net/__pycache__
 ckpt
+wandb
 
 # File
 config.toml

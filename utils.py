@@ -5,6 +5,7 @@ import torch
 import random
 import matplotlib.pyplot as plt
 import seaborn as sns
+import librosa
 import numpy as np
 from torch.utils.data import DataLoader, Dataset, IterableDataset
 from display import format_time
@@ -51,13 +52,15 @@ def corpus_split(corpus):
     return train_df, val_df
 
 class MSPDataset(IterableDataset):
-    def __init__(self, df, text_path, audio_path, transform=default_transform,seed=42):
+    def __init__(self, df, text_path, audio_path, origin_path = None, transform=default_transform,seed=42,getOriginWav=False):
         super(MSPDataset).__init__()
         self.df = df
         self.text_path = text_path
         self.audio_path = audio_path
+        self.origin_path = origin_path
         self.transform = transform
         self.seed = seed
+        self.getOriginWav = getOriginWav
 
         # Total length for worker distribution
         self.total_samples = len(self.df)
@@ -89,7 +92,10 @@ class MSPDataset(IterableDataset):
         for idx in indices[start_idx:end_idx]:
             row = df.iloc[idx]
             try:
-                data, label = self._load_data(row, self.text_path, self.audio_path)
+                if self.getOriginWav:
+                    data, label = self._load_data(row, self.text_path, self.audio_path, self.origin_path)
+                else:
+                    data, label = self._load_data(row, self.text_path, self.audio_path)
                 if self.transform:
                     data,label = self.transform(data,label)
                 yield data,label
@@ -97,10 +103,18 @@ class MSPDataset(IterableDataset):
                 print(f"Error loading file {row['FileName']}: {e}")
                 continue
 
-    def _load_data(self, row, text_path, audio_path):
+    def _load_data(self, row, text_path, audio_path, origin_path = None):
         name = row["FileName"]
         text_file = os.path.join(text_path, name + ".npy")
         audio_file = os.path.join(audio_path, name + ".npy")
+        if(origin_path != None):
+            origin_file = os.path.join(origin_path, name + ".wav") 
+            if not os.path.exists(origin_file):
+                raise FileNotFoundError(f"Origin Audio file not found: {origin_file}")
+            # else: 
+            #     origin_audio, sr = librosa.load(origin_file,sr=16000)
+        else:
+            origin_file = 0.0
         
         # Check if files exist before loading
         if not os.path.exists(text_file):
@@ -117,6 +131,7 @@ class MSPDataset(IterableDataset):
         data = {
             "text": text_features,
             "audio": audio_features,
+            "origin": origin_file
         }
         label = {
             "category": category,
@@ -136,18 +151,18 @@ class MSPTestset(Dataset):
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
         try:
-            data = self._load_data(self, row, self.text_path, self.audio_path)
+            data = self._load_data(row)
             if self.transform:
-                data = self.transform(data)
+                data = self.transform(data, None)
             return data
         except Exception as e:
             print(f"Error loading file {row['FileName']}: {e}")
             return None
 
-    def _load_data(self, row, text_path, audio_path):
+    def _load_data(self, row):
         name = row["FileName"]
-        text_file = os.path.join(text_path, name + '.npy')
-        audio_file = os.path.join(audio_path, name + '.npy')
+        text_file = os.path.join(self.text_path, name + '.npy')
+        audio_file = os.path.join(self.audio_path, name + '.npy')
         
         # Check if files exist before loading
         if not os.path.exists(text_file):
@@ -160,8 +175,8 @@ class MSPTestset(Dataset):
 
         data = {
             "name": name,
-            "text" : text_features,
-            "audio" : audio_features,
+            "text": text_features,
+            "audio": audio_features
         }
         return data
 

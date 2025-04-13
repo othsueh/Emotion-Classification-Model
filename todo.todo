@@ -17,5 +17,8 @@ Tidy the code:
     ✔ Write README.md @done(25-01-21 21:58)
 Write test code:
     ✔ Write the load model part @started(25-01-25 20:09) @done(25-01-25 20:15) @lasted(6m24s)
-    ☐ Write the evaluation part
+    ✔ Write the evaluation part @done(25-01-25 20:46)
+
+Adapt with wandb:
+    ☐ (LOW) Modify the TestDataset Generation Code
 

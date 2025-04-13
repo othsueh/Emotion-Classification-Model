@@ -18,22 +18,18 @@ text_feature_extractor = 'roberta-large-UTT'
 audio_feature_extractor = 'whisper-large-v3-UTT'
 seed = 42
 batch = 16
-epoch = 25
+epoch = 20
+alpha = 0.4 # Mixup alpha
 input_dim = 2304
-audio_dim = 1280
-text_dim = 1024
 leanring_rate = 1e-3
-# emotions = ["Angry", "Sad", "Happy", "Surprise", "Fear", "Disgust", "Contempt", "Neutral"]
-sample_per_class = [6716,6400,16652,2992,1134,1419,2519,29144]
+
 # Model setup
-model = net.MOE(audio_dim,text_dim,dropout=0.2,fusion_type='bilinear',num_experts=3).cuda()
-if torch.cuda.device_count() > 1:
-    print(f"Using {torch.cuda.device_count()} GPUs!")
-    model = nn.DataParallel(model)
+model = net.SimpleModel(input_dim, dropout=0.3).cuda()
 net_name = model.__class__.__name__
 
-# loss criterion
-criterion = net.DiverseExpertLoss(sample_per_class)
+# Weighted CrossEntropyLoss
+weights = torch.tensor([1.247,1.308,0.503,2.798,7.383,5.900,3.324,0.287]).cuda()
+criterion = nn.CrossEntropyLoss(weight=weights).cuda()
 optimizer = optim.Adam(model.parameters(), lr=leanring_rate)
 
 # Set file unique header
@@ -65,22 +61,19 @@ def train(train_loader):
         text, audio = data["text"], data["audio"]
         category, avd = label["category"], label["avd"] # avd not use in current model
         
-        # Input data
-        # total_input = torch.cat((text, audio), dim=1) # Concatenate text and audio features
-        true_label = torch.argmax(category, dim=1)
-        text, audio, true_label= text.cuda(), audio.cuda(), true_label.cuda()
+        # Mixup data
+        text_input, audio_input, label_a, label_b, lam = mixup_data(text, audio, category, alpha)
+        
+        total_input = torch.cat((text_input, audio_input), dim=1)
+        total_input, label_a, label_b = total_input.cuda(), label_a.cuda(), label_b.cuda()
+        
+        output = model(total_input)
 
-        output = model(audio,text)
+        # Mixup loss
+        label_a, label_b = label_a.argmax(dim=1), label_b.argmax(dim=1)
+        loss_func = mixup_criterion(label_a, label_b, lam)
 
-        #! For MOE model only(Need to Modify!)
-        extra_info = {}
-        logits = output['logits']
-        extra_info.update({
-            "logits": logits.transpose(0,1)
-        })
-        output = output['output']
-        # Loss
-        loss = criterion(output_logits = output, target = true_label, extra_info=extra_info)
+        loss = loss_func(criterion, output)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -127,12 +120,13 @@ def evaluate(valid_loader, last=False):
             text, audio = data["text"], data["audio"]
             category, avd = label["category"], label["avd"]
 
-            true_label = torch.argmax(category, dim=1)
-            text, audio, true_label= text.cuda(), audio.cuda(), true_label.cuda()
+            total_input = torch.cat((text, audio), dim=1)
+            total_input, category = total_input.cuda(), category.cuda()
 
-            output = model(audio,text)
-            output = output['output']
-            loss = criterion(output_logits = output, target = true_label)
+            output = model(total_input)
+
+            true_label = torch.argmax(category, dim=1)
+            loss = criterion(output, true_label)
             true_label = true_label.cpu()
 
             # For loss calculation
@@ -184,13 +178,9 @@ if __name__ == "__main__":
     print(f"Number of validation samples: {valid_dataset.total_samples}")
 
     # Create dataloaders
-    # train_loader = DataLoader(train_dataset, batch_size=batch, num_workers=16)
-    # valid_loader = DataLoader(valid_dataset, batch_size=batch, num_workers=16)
-    train_loader = DataLoader(train_dataset, batch_size=batch*torch.cuda.device_count(), 
-                            num_workers=4*torch.cuda.device_count(), pin_memory=True)
-    valid_loader = DataLoader(valid_dataset, batch_size=batch*torch.cuda.device_count(), 
-                            num_workers=4*torch.cuda.device_count(), pin_memory=True)
-    
+    train_loader = DataLoader(train_dataset, batch_size=batch, num_workers=16)
+    valid_loader = DataLoader(valid_dataset, batch_size=batch, num_workers=16)
+
     # Train and evaluate
     train_losses = []
     val_losses = []

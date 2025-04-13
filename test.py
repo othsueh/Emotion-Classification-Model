@@ -16,11 +16,11 @@ corpus = "MSPPODCAST"
 text_feature_extractor = 'roberta-large-UTT'
 audio_feature_extractor = 'whisper-large-v3-UTT'
 input_dim = 2304
-model_name = ''
+model_name = 'MSPPODCAST_SimpleModel_roberta-large-UTT_whisper-large-v3-UTT_model.pth'
 
 # Model setup
 model = net.SimpleModel(input_dim, dropout=0.3).cuda()
-model = model.load_state_dict(torch.load(os.path.join(config['PATH_TO_CKPT'], model_name)))
+model.load_state_dict(torch.load(os.path.join(config['PATH_TO_CKPT'], model_name),map_location=torch.device('cuda')))
 net_name = model.__class__.__name__
 
 # Set file unique header
@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     # Create datasets
     test_dataset = MSPTestset(corpus_df, text_feature, audio_feature)
-    print(f"Number of training samples: {len(test_dataset)}")
+    print(f"Number of test samples: {len(test_dataset)}")
 
     # Create dataloaders
     test_loader = DataLoader(test_dataset)
@@ -83,9 +83,9 @@ if __name__ == "__main__":
     # Start timing
     start_time = time.time()
     
-    numel_list = [p.numel() for p in model.parameters()]
-    total_params = sum(numel_list)
-    print(f"Total number of downstream model parameters: {total_params}")
+    # numel_list = [p.numel() for p in model.parameters()]
+    # total_params = sum(numel_list)
+    # print(f"Total number of downstream model parameters: {total_params}")
 
     # evaluate.. 
     evaluate(test_loader, corpus_df)

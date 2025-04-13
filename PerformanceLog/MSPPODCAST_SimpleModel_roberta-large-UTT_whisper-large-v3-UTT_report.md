@@ -2,17 +2,20 @@
 # Training Report
 
 ## Model Information
-- Total Parameters: 62,580,744
-- Total Training Time: 19m14s
+- Total Parameters: 13,136,392
+- Total Training Time: 25m53s
+- Batch Size: 16
+- Learning Rate: 0.001
+- Number of Epochs: 20
 
 ## Performance Metrics
 ### Training
-- Macro F1 Score: 0.319
-- Accuracy: 0.385
+- Macro F1 Score: 0.766
+- Accuracy: 0.868
 
 ### Validation  
-- Macro F1 Score: 0.300
-- Accuracy: 0.491
+- Macro F1 Score: 0.273
+- Accuracy: 0.413
 
 ## Visualizations
 ### Loss Curves
