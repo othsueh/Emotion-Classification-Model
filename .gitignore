@@ -2,10 +2,11 @@
 __pycache__
 FeatureExtraction
 net/__pycache__
+dataset_module/__pycache__
+archive
 ckpt
 wandb
 
 # File
-config.toml
 normal.py
 PerformanceLog/*.pth

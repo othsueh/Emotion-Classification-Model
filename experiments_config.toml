@@ -1,0 +1,41 @@
+[base_config]
+corpus = "MSPPODCAST"
+upstream_model = "wav2vec2-base-906h"
+epoch = 25
+batch_size = 16
+leanring_rate = 4e-5
+dropout = 0.2
+patience = 5
+verbose = true
+seed = 42
+hidden_dim = 64
+num_layers = 2
+use_feature = false
+save_path = "saved_models"
+
+
+[[experiments]]
+name = "Wav2vec2 finetune (2 layers)"
+model_type = "UpstreamFinetune"
+config = "base_config"
+config_update = { finetune_layers = 2 }
+
+[[experiments]]
+name = "Wav2vec2 finetune (3 layers)"
+model_type = "UpstreamFinetune"
+config = "base_config"
+config_update = { finetune_layers = 3 }
+
+# [[experiments]]
+# # LSTM with multi-head attention
+# name = "LSTM with Multi-Head Attention (4 heads)"
+# model_type = "lstm_multihead"
+# config = "base_config"
+# config_update = { num_heads = 4 }
+
+# [[experiments]]
+# # Variations of hidden dimensions
+# name = "LSTM with Attention (32 Hidden Units)"
+# model_type = "lstm_attention"
+# config = "base_config"
+# config_update = { hidden_dim = 32 }

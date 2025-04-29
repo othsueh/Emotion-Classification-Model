@@ -22,3 +22,27 @@ Write test code:
 Adapt with wandb:
     ☐ (LOW) Modify the TestDataset Generation Code
 
+Code refactoring: 
+    ✔ Add main file @started(25-04-15 17:15) @done(25-04-15 18:44) @lasted(1h29m15s)
+        ✔ Read the config file @started(25-04-15 17:16) @done(25-04-15 17:32) @lasted(16m26s)
+        ✔ Prepare necessary experiment config file information @started(25-04-15 17:33) @done(25-04-15 17:45) @lasted(12m42s)
+        ✔ Send the config and add experiment file @started(25-04-15 17:46) @done(25-04-15 18:15) @lasted(29m29s)
+        ✔ Write the model @started(25-04-15 18:15) @done(25-04-15 18:33) @lasted(18m28s)
+        ✔ Write connect model file @done(25-04-15 18:44)
+    ✔ Add experiment file @started(25-04-16 11:53) @done(25-04-16 21:49) @lasted(9h56m49s)
+        ✔ Write wandb config @started(25-04-16 11:53) @done(25-04-16 12:07) @lasted(14m28s)
+        ✔ Write data preprocessing @started(25-04-16 16:19) @done(25-04-16 17:24) @lasted(1h5m39s)
+        ✔ Write trainer @started(25-04-16 17:24) @done(25-04-16 21:39) @lasted(4h15m4s)
+        ✔ Write validator @done(25-04-16 21:39)
+    ☐ Update dotenv wandb api
+
+    ☐ Improve experiment file
+        ☐ Update `data_preprocessing()` 
+        ☐ Combine `data_preprocessing()` with `corpus_split()`
+        ☐ Update the path configuration part in files(audio_path,textFeature_path...) with `get_feature_dir()` in util.py (Needs to rename) 
+        ☐ Set Maximum trainable parameters to prevent crash
+        ☐ Verbose is not complete
+
+
+
+

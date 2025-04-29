@@ -3,21 +3,38 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-def balanced_softmax_loss(labels, logits, sample_per_class, reduction):
-    """Compute the Balanced Softmax Loss between `logits` and the ground truth `labels`.
+class BalancedSoftmaxLoss(nn.Module):
+    """Balanced Softmax Loss that accounts for class imbalance.
+    
     Args:
-      labels: A int tensor of size [batch].
-      logits: A float tensor of size [batch, no_of_classes].
-      sample_per_class: A int tensor of size [no of classes].
-      reduction: string. One of "none", "mean", "sum"
-    Returns:
-      loss: A float tensor. Balanced Softmax Loss.
+        sample_per_class (list or torch.Tensor): Number of samples per class.
+        reduction (str, optional): Specifies the reduction to apply to the output. 
+            Options: 'none' | 'mean' | 'sum'. Default: 'mean'.
     """
-    spc = sample_per_class.type_as(logits)
-    spc = spc.unsqueeze(0).expand(logits.shape[0], -1)
-    logits = logits + spc.log()
-    loss = nn.functional.cross_entropy(input=logits, target=labels, reduction=reduction)
-    return loss
+    def __init__(self, sample_per_class, reduction='mean'):
+        """
+        Args:
+            sample_per_class: A list or tensor containing the count of samples for each class.
+                              This should be the raw count, not percentages.
+            reduction: Specifies the reduction to apply to the output.
+        """
+        super(BalancedSoftmaxLoss, self).__init__()
+        self.sample_per_class = torch.tensor(sample_per_class) if not isinstance(sample_per_class, torch.Tensor) else sample_per_class
+        self.reduction = reduction
+        
+    def forward(self, logits, labels):
+        """
+        Args:
+            logits: A float tensor of size [batch, no_of_classes].
+            labels: A int tensor of size [batch].
+        Returns:
+            loss: A float tensor. Balanced Softmax Loss.
+        """
+        spc = self.sample_per_class.type_as(logits)
+        spc = spc.unsqueeze(0).expand(logits.shape[0], -1)
+        adjusted_logits = logits + spc.log()
+        loss = F.cross_entropy(input=adjusted_logits, target=labels, reduction=self.reduction)
+        return loss
 
 class DiverseExpertLoss(nn.Module):
     def __init__(self, cls_num_list=None,  max_m=0.5, s=30, tau=1.7):
