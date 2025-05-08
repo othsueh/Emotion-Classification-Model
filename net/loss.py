@@ -3,6 +3,67 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+class CCCLoss(nn.Module):
+    """
+    Concordance Correlation Coefficient Loss.
+    CCC = [2 * pxy * ax * ay] / [ax² + ay² + (μx - μy)²]
+    where:
+    - pxy is the Pearson correlation coefficient
+    - ax, ay are the standard deviations
+    - μx, μy are the means
+    
+    For loss: loss = 1 - CCC (so we minimize loss to maximize CCC)
+    """
+    def __init__(self):
+        super(CCCLoss, self).__init__()
+
+    def forward(self, pred, target):
+        """
+        Args:
+            pred: model predictions, shape [batch_size, 2]
+            target: ground truth labels, shape [batch_size, 2]
+        Returns:
+            CCC loss (average of valence and arousal CCC losses)
+        """
+        # Separate valence and arousal
+        pred_arousal, pred_valence = pred[:, 0], pred[:, 1]
+        target_arousal, target_valence = target[:, 0], target[:, 1]
+        
+        # Calculate CCC for valence
+        ccc_valence = self._calculate_ccc(pred_valence, target_valence)
+        
+        # Calculate CCC for arousal 
+        ccc_arousal = self._calculate_ccc(pred_arousal, target_arousal)
+        
+        # Average the two losses (1 - CCC for each dimension)
+        ccc_loss = 1.0 - (ccc_valence + ccc_arousal) / 2.0
+        
+        return ccc_loss
+    
+    def _calculate_ccc(self, pred, target):
+        """Calculate CCC for a single dimension"""
+        pred_mean = torch.mean(pred)
+        target_mean = torch.mean(target)
+        
+        pred_var = torch.var(pred, unbiased=False)
+        target_var = torch.var(target, unbiased=False)
+        
+        # Covariance
+        pred_centered = pred - pred_mean
+        target_centered = target - target_mean
+        covariance = torch.mean(pred_centered * target_centered)
+        
+        # CCC formula
+        numerator = 2.0 * covariance
+        denominator = pred_var + target_var + (pred_mean - target_mean) ** 2
+        
+        # Avoid division by zero
+        eps = 1e-8
+        ccc = numerator / (denominator + eps)
+        
+        return ccc
+
+
 class BalancedSoftmaxLoss(nn.Module):
     """Balanced Softmax Loss that accounts for class imbalance.
     

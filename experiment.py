@@ -1,29 +1,19 @@
 import pandas as pd
 import torch.optim as optim
 from sklearn.metrics import f1_score, accuracy_score, recall_score
+from transformers import get_scheduler
 from utils import *
 from display import *
 from net import *
+from dataset_module import *
 
-def data_preprocessing(corpus):
-    """
-    Present only for MSP-Podcast Corpus
-    Wait for update
-    """
-    # Load corpus data
-    corpus_path = config[corpus]["PATH_TO_LABEL"]
-    corpus_df = pd.read_csv(corpus_path)
-    corpus_df["FileName"]= corpus_df["FileName"].str.replace('.wav', '')
+sr = 16000
 
-    # Remove non consensus labels
-    main_corpus_df = corpus_df[~corpus_df["EmoClass"].isin(["X", "O"])]
-
-    return main_corpus_df
-
-def trainer(model,train_loader,val_loader,epochs,batch_size,learning_rate,use_feature,length, total_steps,patience):
+def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rate,use_feature,length, total_steps,patience):
     sample_per_class = [6716,6400,16652,2992,1134,1419,2519,29144]
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    criterion = BalancedSoftmaxLoss(sample_per_class)
+    category_criterion = BalancedSoftmaxLoss(sample_per_class)
+    dim_criterion = CCCLoss()
     lr_scheduler = get_scheduler(
         name="linear",                 
         optimizer=optimizer,
@@ -48,24 +38,29 @@ def trainer(model,train_loader,val_loader,epochs,batch_size,learning_rate,use_fe
         train_length = length["train"]
         model.train()
 
-        for batch_idx, (data, label) in enumerate(train_loader):
+        for batch_idx, data in enumerate(train_loader):
             
-            category, avd = label["category"], label["avd"] # avd not use in current model
+            category, avd = data["category"], data["avd"] # avd not use in current model
             true_label = torch.argmax(category, dim=1).cuda()
+            avd = avd.cuda()
 
+            # Calculate preforward memory usage
             mem_preforward = torch.cuda.memory_allocated()
-            if use_feature:
-                text, audio = data["text"], data["audio"]
-                text, audio = text.cuda(), audio.cuda()
-                output = model(audio,text)
-            else:
-                sample, sr = data["sample"], data["sr"]
-                output = model(sample)
+
+            text, audio = data["text"], data["audio"]
+            # Temporary (Not using text)
+            audio = audio.cuda()
+            category_output, dim_output = model(audio,sr)
+
+            # Calculate forwarded memory usage
             mem_forward = torch.cuda.memory_allocated()
             
-            loss = criterion(output,true_label)
+            cls_loss = category_criterion(category_output,true_label)
+            reg_loss = dim_criterion(dim_output,avd)
+            alpha,beta = 0.5, 0.5
+            total_loss = alpha * reg_loss + beta * cls_loss
             optimizer.zero_grad()
-            loss.backward()
+            total_loss.backward()
             mem_backward = torch.cuda.memory_allocated()
             optimizer.step()
             mem_optimizer = torch.cuda.memory_allocated()
@@ -79,9 +74,9 @@ def trainer(model,train_loader,val_loader,epochs,batch_size,learning_rate,use_fe
             }
             wandb.log(mem_metrics)
 
-            train_loss += loss.item()
+            train_loss += total_loss.item()
             # For F1 score, accuracy, and UAR calculation
-            pred = output.argmax(dim=1).cpu()
+            pred = category_output.argmax(dim=1).cpu()
             true_label = torch.argmax(category, dim=1).cpu()
             running_macro_f1 += f1_score(true_label, pred, average='macro')
             running_acc += accuracy_score(true_label, pred)
@@ -111,21 +106,20 @@ def trainer(model,train_loader,val_loader,epochs,batch_size,learning_rate,use_fe
         model.eval()
 
         with torch.no_grad():
-            for batch_idx, (data, label) in enumerate(val_loader):
+            for batch_idx, data in enumerate(val_loader):
                 
-                category, avd = label["category"], label["avd"] # avd not use in current model
+                category, avd = data["category"], data["avd"] # avd not use in current model
                 true_label = torch.argmax(category, dim=1).cuda()
 
-                if use_feature:
-                    text, audio = data["text"], data["audio"]
-                    text, audio = text.cuda(), audio.cuda()
-                    output = model(audio,text)
-                else:
-                    sample, sr = data["sample"], data["sr"]
-                    output = model(sample)
+                text, audio = data["text"], data["audio"]
+                # Temporary (Not using text)
+                audio = audio.cuda()
+                output = model(audio,sr)
 
-                loss = criterion(output,true_label)
-                val_loss += loss.item()
+                cls_loss = category_criterion(category_output,true_label)
+                reg_loss = dim_criterion(dim_output,avd)
+                total_loss = alpha * reg_loss + beta * cls_loss
+                val_loss += total_loss.item()
                 
                 pred = output.argmax(dim=1).cpu()
                 true_label = torch.argmax(category, dim=1).cpu()
@@ -134,7 +128,7 @@ def trainer(model,train_loader,val_loader,epochs,batch_size,learning_rate,use_fe
                 running_uar += recall_score(true_label, pred, average='macro',zero_division=0.0)
 
                 if(batch_idx in batch_list):
-                    log_view_table(sample,sr[0],pred,true_label,avd.cpu(),output.softmax(dim=1).cpu())
+                    log_view_table(dataset,audio,sr,pred,true_label,avd.cpu(),output.softmax(dim=1).cpu())
                 
 
                 progress_bar(batch_idx+1, val_length, 'Loss: %.3f | Macro F1: %.3f | Acc: %.3f | UAR: %.3f' % 
@@ -188,7 +182,7 @@ def run_experiment(model_type,device='cuda',**kwargs):
 
     torch.cuda.empty_cache()
 
-    wandb.login(key=config['WANDBAPI'])
+    wandb.login(key=WANDB_TOKEN)
     wandb.init(
         project="MSP-Podcast",
         tags=["baseline","Finetune try"], 
@@ -230,33 +224,29 @@ def run_experiment(model_type,device='cuda',**kwargs):
     np.random.seed(seed)
     random.seed(seed)
 
-    # Dataset Preparation
-    corpus_dataFrame = data_preprocessing(corpus)
-    train_dataFrame, val_dataFrame = corpus_split(corpus_dataFrame)
-    train_dataset = MSPDataset(train_dataFrame,audio_path=config[corpus]['PATH_TO_AUDIO'],use_feature=use_feature,seed=seed)
-    val_dataset = MSPDataset(val_dataFrame,audio_path=config[corpus]['PATH_TO_AUDIO'],use_feature=use_feature,seed=seed)
+    # Dataset Preparation (Just need to load webdataset)
+    dataset = MSPPodcast(config[corpus]['PATH_TO_DATASET'])
+    train_samples = dataset.train_counts
+    val_samples = dataset.validation_counts
+    train_loader = dataset.create_dataloader('train',batch_size)
+    valid_loader = dataset.create_dataloader('validation',batch_size)
 
     if verbose:
-        print(f"Number of training samples: {train_dataset.total_samples}")
-        print(f"Number of validation samples: {val_dataset.total_samples}")
-        
+        print(f'There are total {train_samples} train samples')
+        print(f'There are total {val_samples} validation samples')
         numel_list = [p.numel() for p in model.parameters() if p.requires_grad]
         total_params = sum(numel_list)
         print(f"Total number of trainable parameters: {total_params:,}")
         wandb.log({"model/trainable_parameters": total_params})
 
     length = {
-        "train": train_dataset.total_samples // batch_size + 1,
-        "val": val_dataset.total_samples // batch_size + 1
+        "train": train_samples // batch_size + 1,
+        "val": val_samples // batch_size + 1
     }
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size*torch.cuda.device_count(), 
-                            num_workers=4*torch.cuda.device_count(), pin_memory=True, collate_fn=collate_fn)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size*torch.cuda.device_count(), 
-                            num_workers=4*torch.cuda.device_count(), pin_memory=True, collate_fn=collate_fn)
-    total_training_steps = train_dataset.total_samples // batch_size * epochs
+    total_training_steps = train_samples // batch_size * epochs
 
-    model, results = trainer(model,train_loader,val_loader,epochs,batch_size,learning_rate,use_feature,length, total_training_steps, patience)
+    model, results = trainer(model,dataset,train_loader,valid_loader,epochs,batch_size,learning_rate,use_feature,length, total_training_steps, patience)
 
     wandb.finish()
     

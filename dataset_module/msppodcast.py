@@ -4,33 +4,9 @@ class MSPPodcast(BaseDataset):
     def __init__(self,dataset_dir):
         super().__init__(dataset_dir)
         self.emotions = ['angry', 'sad', 'disgust', 'contempt', 'fear', 'neutral', 'surprise', 'happy']
-    def emotion_to_onehot(self, meta_data):
-        """
-        Convert emotion probabilities to one-hot encoded vector based on max probability.
-        
-        Args:
-            meta_data (dict): Dictionary containing emotion probabilities
-            
-        Returns:
-            torch.Tensor: One-hot encoded vector of shape (8,)
-        """
-        # Create a zero tensor of length 8 (number of emotions)
-        one_hot = torch.zeros(len(self.emotions))
-        
-        # Find emotion with maximum probability
-        max_emotion = None
-        max_probability = 0
-        for emo in self.emotions:
-            if meta_data[emo] > max_probability:
-                max_probability = meta_data[emo]
-                max_emotion = emo
-        
-        # Set 1 at the index of the max emotion
-        if max_emotion is not None:
-            emotion_idx = self.emotions.index(max_emotion)
-            one_hot[emotion_idx] = 1.0
-            
-        return one_hot, max_emotion
+        self.train_counts = 84030
+        self.validation_counts = 19815
+        self.test_counts = 45462
 
     def get_collate_fn(self):
         """Custom collate function for this specific dataset type"""

@@ -15,16 +15,16 @@ save_path = "saved_models"
 
 
 [[experiments]]
-name = "Wav2vec2 finetune (2 layers)"
+name = "Wav2vec2 finetune (1 layers)"
 model_type = "UpstreamFinetune"
 config = "base_config"
-config_update = { finetune_layers = 2 }
+config_update = { finetune_layers = 1 }
 
-[[experiments]]
-name = "Wav2vec2 finetune (3 layers)"
-model_type = "UpstreamFinetune"
-config = "base_config"
-config_update = { finetune_layers = 3 }
+# [[experiments]]
+# name = "Wav2vec2 finetune (3 layers)"
+# model_type = "UpstreamFinetune"
+# config = "base_config"
+# config_update = { finetune_layers = 3 }
 
 # [[experiments]]
 # # LSTM with multi-head attention

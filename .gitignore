@@ -8,5 +8,6 @@ ckpt
 wandb
 
 # File
+.env
 normal.py
 PerformanceLog/*.pth

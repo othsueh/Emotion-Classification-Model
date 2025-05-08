@@ -1,10 +1,11 @@
 import os
+import datetime
 import time
 import sys
 
 # Uncomment when not use ipynb
-# _, term_width = os.popen('stty size', 'r').read().split()
-# term_width = int(term_width)
+_, term_width = os.popen('stty size', 'r').read().split()
+term_width = int(term_width)
 
 TOTAL_BAR_LENGTH = 65.
 last_time = time.time()

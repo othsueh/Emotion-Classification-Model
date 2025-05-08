@@ -34,14 +34,18 @@ Code refactoring:
         ✔ Write data preprocessing @started(25-04-16 16:19) @done(25-04-16 17:24) @lasted(1h5m39s)
         ✔ Write trainer @started(25-04-16 17:24) @done(25-04-16 21:39) @lasted(4h15m4s)
         ✔ Write validator @done(25-04-16 21:39)
-    ☐ Update dotenv wandb api
-
+    ✔ Update dotenv wandb api @done(25-05-07 16:27)
+    ☐ Add huggingface token
     ☐ Improve experiment file
-        ☐ Update `data_preprocessing()` 
-        ☐ Combine `data_preprocessing()` with `corpus_split()`
-        ☐ Update the path configuration part in files(audio_path,textFeature_path...) with `get_feature_dir()` in util.py (Needs to rename) 
         ☐ Set Maximum trainable parameters to prevent crash
         ☐ Verbose is not complete
+    ☐ Add upstream name and model path to model settings
+New Update:
+    ✔ Add regressor function @done(25-05-08 11:48)
+    ☐ Get the CCC of valence and arousal and put it into report
+    ☐ Check is test data exist?
+    ☐ Download the pretrained model back
+    ☐ Calculate the memory usage
 
 
 

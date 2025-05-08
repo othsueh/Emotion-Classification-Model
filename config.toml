@@ -8,4 +8,6 @@ AM = ['wavlm-large','hubert-xlarge-ls960-ft','wav2vec2-large-960h','wav2vec2-lar
 
 [MSPPODCAST]
 PATH_TO_LABEL='/datas/store162/othsueh/MSP-Podcast/Labels/emosuperb_consensus.csv'
+PATH_TO_AUDIO='/datas/store162/othsueh/MSP-Podcast/Audios'
+PATH_TO_TRANSCRIPT='/datas/store162/othsueh/MSP-Podcast/Transcripts'
 PATH_TO_DATASET='/datas/store162/othsueh/webdataset_msppodcast'

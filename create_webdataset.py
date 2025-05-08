@@ -154,9 +154,10 @@ def main():
     ]
 
     for split in groups:
-        split_dir = f"{output_dir}/{split['name']}"
-        os.makedirs(split_dir, exist_ok=True)
-        create_webdataset_shards(split_dir,split['name'],split['df'],split['samples_per_shard'])
+        if split['name'] == 'test':
+            split_dir = f"{output_dir}/{split['name']}"
+            os.makedirs(split_dir, exist_ok=True)
+            create_webdataset_shards(split_dir,split['name'],split['df'],split['samples_per_shard'])
 
 
 if __name__ == '__main__':
