@@ -39,10 +39,11 @@ Code refactoring:
     ☐ Improve experiment file
         ☐ Set Maximum trainable parameters to prevent crash
         ☐ Verbose is not complete
-    ☐ Add upstream name and model path to model settings
+    ✔ Add upstream name and model path to model settings @done(25-05-09 23:48)
+    ✔ Fix log view table @started(25-05-08 17:31) @done(25-05-08 17:33) @lasted(2m19s)
 New Update:
     ✔ Add regressor function @done(25-05-08 11:48)
-    ☐ Get the CCC of valence and arousal and put it into report
+    ✔ Get the CCC of valence and arousal and put it into report @done(25-05-08 17:54)
     ☐ Check is test data exist?
     ☐ Download the pretrained model back
     ☐ Calculate the memory usage

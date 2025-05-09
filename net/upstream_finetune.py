@@ -1,11 +1,36 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import AutoProcessor, AutoModel
+import os
+from transformers import PretrainedConfig, PreTrainedModel, AutoProcessor, AutoModel
+
+class UpstreamFinetuneConfig(PretrainedConfig):
+    model_type = "wav2vec2-emodualhead"
+    def __init__(
+        self,
+        upstream_model="wav2vec2-base-960h",  # Reference to base model
+        finetune_layers = 0 , # Prevent overhead gpu usage
+        hidden_dim = 64, 
+        dropout=0.2, 
+        num_layers=2, 
+        classifier_output_dim=8,
+        regressor_output_dim=2,
+        **kwargs
+    ):
+        self.upstream_model = upstream_model
+        self.dropout = dropout
+        self.finetune_layers = finetune_layers
+        self.num_layers = num_layers
+        self.hidden_dim = hidden_dim
+        self.classifier_output_dim = classifier_output_dim
+        self.regressor_output_dim = regressor_output_dim
+        super().__init__(**kwargs)
 
 class RegressionHead(nn.Module):
-    def __init__(self,first_dim,hidden_dim,dropout, num_layers):
+    def __init__(self,first_dim,hidden_dim,dropout, num_layers, min_score = 1.0, max_score = 7.0):
         super().__init__()
+        self.min_score = min_score
+        self.max_score = max_score
 
         layers = []
         input_dim = first_dim
@@ -32,7 +57,8 @@ class RegressionHead(nn.Module):
 
     def forward(self,x):
         output = self.regressor(x)
-        return output
+        scaled_output = torch.sigmoid(output) * (self.max_score - self.min_score) + self.min_score
+        return scaled_output
 
 
 class ClassificationHead(nn.Module):
@@ -66,13 +92,14 @@ class ClassificationHead(nn.Module):
         output = self.classifier(x)
         return output
 
-class Upstream_finetune_simple(nn.Module):
-    def __init__(self, upstream_name, finetune_layers = 2 , hidden_dim = 64, dropout=0.2, num_layers=2, num_labels=8, device='cuda'):
-        super().__init__()
-        
-        self.feature_extractor = AutoProcessor.from_pretrained("/datas/store163/othsueh/FeatureExtraction/models/wav2vec2-base-960h",use_fast=False)
-        self.upstream = AutoModel.from_pretrained("/datas/store163/othsueh/FeatureExtraction/models/wav2vec2-base-960h")
-        self.finetune_layers = finetune_layers
+class UpstreamFinetune(PreTrainedModel):
+    config_class = UpstreamFinetuneConfig
+    def __init__(self, config, pretrained_path,device):
+        super().__init__(config)
+        upstream_path = os.path.join(pretrained_path, config.upstream_model)
+        self.feature_extractor = AutoProcessor.from_pretrained(upstream_path,use_fast=False)
+        self.upstream = AutoModel.from_pretrained(upstream_path)
+        self.finetune_layers = config.finetune_layers
 
         for param in self.upstream.parameters():
             param.requires_grad = False
@@ -82,16 +109,15 @@ class Upstream_finetune_simple(nn.Module):
                 param.requires_grad = True
                 
         input_dim = self.upstream.config.hidden_size
-        self.classifier = ClassificationHead(input_dim,hidden_dim,dropout,num_layers,num_labels)
-        self.regressor = RegressionHead(input_dim,hidden_dim,dropout,num_layers)
+        self.classifier = ClassificationHead(input_dim,config.hidden_dim,config.dropout,config.num_layers,config.classifier_output_dim)
+        self.regressor = RegressionHead(input_dim,config.hidden_dim,config.dropout,config.num_layers)
 
         self.to(device)
         
     def forward(self, x, sr):
         # Extract features from upstream model
         features = self.feature_extractor(x,sampling_rate=sr,return_tensors='pt',padding=True).input_values
-        features = features.squeeze(0)
-        features = features.squeeze(1)
+        features = features.squeeze(0).squeeze(1)
         features = features.cuda()
         
         if torch.isnan(features).any():

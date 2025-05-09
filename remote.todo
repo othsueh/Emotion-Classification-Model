@@ -1,0 +1,12 @@
+# The TODO list for running experiment at remote machine
+
+Environment Preparation:
+    ☐ Run `pip install -r requirements.txt`
+    ☐ apt update && apt install tmux
+    ☐ Rename `.env.example` to `.env`
+    ☐ Add necessary api tokens
+    ☐ Modify the path in `config.toml`
+    ☐ Check the compatibility of toml library
+
+Model Preparation:
+    ☐ Download upstream model

@@ -1,5 +1,6 @@
 import tomli
 import os
+import io
 import time
 import torch
 import wandb
@@ -28,11 +29,11 @@ def get_feature_dir(corpus,model):
     assert os.path.exists(path), f"Feature directory {path} does not exist"
     return path
 
-def log_view_table(dataset, audios, sr, predicted, labels, arousal_valence, probs):
-    columns = ["Audio", "Predict", "Target", "Arousal", "Valence"] + dataset.emotions
+def log_view_table(dataset, audios, sr, predicted, labels, arousal, valence, true_arousalAndValence ,probs):
+    columns = ["Audio", "Predict", "Target", "Arousal", "Valence", "True Arousal", "True Valence"] + dataset.emotions
     table = wandb.Table(columns=columns)
-    for audio, pred, tar, aro_val, prob in zip(audios,predicted,labels,arousal_valence, probs):
-        table.add_data(wandb.Audio(audio,sample_rate=sr),dataset.index_to_emotion(pred),dataset.index_to_emotion(tar),aro_val[0],aro_val[1],*prob.numpy())
+    for audio, pred, tar, aro, val, trueav, prob in zip(audios,predicted,labels,arousal, valence, true_arousalAndValence ,probs):
+        table.add_data(wandb.Audio(audio, sample_rate=sr),dataset.index_to_emotion(pred),dataset.index_to_emotion(tar),aro, val ,trueav[0], trueav[1],*prob.numpy())
     wandb.log({"predictions_table":table}, commit=False)
 
 def mixup_data(text, audio, label, alpha=1.0):

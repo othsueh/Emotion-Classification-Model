@@ -35,6 +35,8 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
         running_macro_f1 = 0
         running_acc = 0
         running_uar = 0
+        running_ccc_arousal = 0
+        running_ccc_valence = 0
         train_length = length["train"]
         model.train()
 
@@ -56,7 +58,7 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
             mem_forward = torch.cuda.memory_allocated()
             
             cls_loss = category_criterion(category_output,true_label)
-            reg_loss = dim_criterion(dim_output,avd)
+            reg_loss, ccc_arousal, ccc_valence = dim_criterion(dim_output,avd)
             alpha,beta = 0.5, 0.5
             total_loss = alpha * reg_loss + beta * cls_loss
             optimizer.zero_grad()
@@ -81,27 +83,38 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
             running_macro_f1 += f1_score(true_label, pred, average='macro')
             running_acc += accuracy_score(true_label, pred)
             running_uar += recall_score(true_label, pred, average='macro',zero_division=0.0)
+            running_ccc_arousal += ccc_arousal
+            running_ccc_valence += ccc_valence
 
 
-            progress_bar(batch_idx+1, train_length, 'Loss: %.3f | Macro F1: %.3f | Acc: %.3f | UAR: %.3f' % 
+            progress_bar(batch_idx+1, train_length, 'Loss: %.3f | Macro F1: %.3f | Acc: %.3f | UAR: %.3f | Arousal: %.3f | Valence: %.3f' % 
                         (train_loss/(batch_idx+1), running_macro_f1/(batch_idx+1), 
-                        running_acc/(batch_idx+1), running_uar/(batch_idx+1)))
+                        running_acc/(batch_idx+1), running_uar/(batch_idx+1),
+                        running_ccc_arousal/(batch_idx+1), running_ccc_valence/(batch_idx+1)))
         
         avg_loss = train_loss / (batch_idx + 1)
         avg_macro_f1 = running_macro_f1 / (batch_idx + 1) 
         avg_acc = running_acc / (batch_idx + 1)
         avg_uar = running_uar / (batch_idx + 1)
+        avg_arousal = running_ccc_arousal / (batch_idx + 1)
+        avg_valence = running_ccc_valence / (batch_idx + 1)
+        avg_ccc = (avg_arousal + avg_valence) / 2
 
         train_metric = {
             "train/loss": avg_loss,
             "train/macro_f1": avg_macro_f1,
             "train/accuracy": avg_acc,
             "train/uar": avg_uar,
+            "train/arousal": avg_arousal,
+            "train/valence": avg_valence,
+            "train/avg_ccc": avg_ccc,
         }
 
         running_macro_f1 = 0
         running_acc = 0
         running_uar = 0
+        running_ccc_arousal = 0
+        running_ccc_valence = 0
         val_length = length["val"]
         model.eval()
 
@@ -110,41 +123,53 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
                 
                 category, avd = data["category"], data["avd"] # avd not use in current model
                 true_label = torch.argmax(category, dim=1).cuda()
+                avd = avd.cuda()
 
                 text, audio = data["text"], data["audio"]
                 # Temporary (Not using text)
-                audio = audio.cuda()
-                output = model(audio,sr)
+                audio = audio.squeeze(1).cuda()
+                category_output, dim_output = model(audio,sr)
 
                 cls_loss = category_criterion(category_output,true_label)
-                reg_loss = dim_criterion(dim_output,avd)
+                reg_loss, ccc_arousal, ccc_valence = dim_criterion(dim_output,avd)
                 total_loss = alpha * reg_loss + beta * cls_loss
                 val_loss += total_loss.item()
                 
-                pred = output.argmax(dim=1).cpu()
+                pred = category_output.argmax(dim=1).cpu()
                 true_label = torch.argmax(category, dim=1).cpu()
                 running_macro_f1 += f1_score(true_label, pred, average='macro')
                 running_acc += accuracy_score(true_label, pred)
                 running_uar += recall_score(true_label, pred, average='macro',zero_division=0.0)
+                running_ccc_arousal += ccc_arousal
+                running_ccc_valence += ccc_valence
 
                 if(batch_idx in batch_list):
-                    log_view_table(dataset,audio,sr,pred,true_label,avd.cpu(),output.softmax(dim=1).cpu())
+                    arousal = dim_output[:,0].cpu()
+                    valence = dim_output[:,0].cpu()
+                    log_view_table(dataset,audio.cpu().numpy(),sr,pred,true_label,arousal,valence,avd.cpu(),category_output.softmax(dim=1).cpu())
                 
 
-                progress_bar(batch_idx+1, val_length, 'Loss: %.3f | Macro F1: %.3f | Acc: %.3f | UAR: %.3f' % 
-                            (val_loss/(batch_idx+1), running_macro_f1/(batch_idx+1), 
-                            running_acc/(batch_idx+1), running_uar/(batch_idx+1)))
+                progress_bar(batch_idx+1, val_length, 'Loss: %.3f | Macro F1: %.3f | Acc: %.3f | UAR: %.3f | Arousal: %.3f | Valence: %.3f' % 
+                        (train_loss/(batch_idx+1), running_macro_f1/(batch_idx+1), 
+                        running_acc/(batch_idx+1), running_uar/(batch_idx+1),
+                        running_ccc_arousal/(batch_idx+1), running_ccc_valence/(batch_idx+1)))
             
         avg_loss = val_loss / (batch_idx + 1)
         avg_macro_f1 = running_macro_f1 / (batch_idx + 1) 
         avg_acc = running_acc / (batch_idx + 1)
         avg_uar = running_uar / (batch_idx + 1)
+        avg_arousal = running_ccc_arousal / (batch_idx + 1)
+        avg_valence = running_ccc_valence / (batch_idx + 1)
+        avg_ccc = (avg_arousal + avg_valence) / 2
         
         val_metric = {
             "val/loss": avg_loss,
             "val/macro_f1": avg_macro_f1,
             "val/accuracy": avg_acc,
             "val/uar": avg_uar,
+            "val/arousal": avg_arousal,
+            "val/valence": avg_valence,
+            "val/avg_ccc": avg_ccc,
         }
 
         # Early stopping check
@@ -178,12 +203,11 @@ def run_experiment(model_type,device='cuda',**kwargs):
     learning_rate = kwargs.get('learning_rate',5e-5)
     verbose = kwargs.get('verbose',True)
     patience = kwargs.get('patience',5)
-    save_path = kwargs.get('save_path', 'saved_models')
 
     torch.cuda.empty_cache()
 
     wandb.login(key=WANDB_TOKEN)
-    wandb.init(
+    run = wandb.init(
         project="MSP-Podcast",
         tags=["baseline","Finetune try"], 
         config = {
@@ -200,18 +224,18 @@ def run_experiment(model_type,device='cuda',**kwargs):
             "num_layers": kwargs.get('num_layers',42),
         }
     )
-    
+
     wandb.log({"mem/begin": torch.cuda.memory_allocated()})
 
     if model_type == 'UpstreamFinetune':
-        model = Upstream_finetune_simple(
-            upstream_name=kwargs.get('upstream_model', "wav2vec2-large-960h"),
+        model_config = UpstreamFinetuneConfig(
+            upstream_model=kwargs.get('upstream_model', "wav2vec2-base-960h"),
             finetune_layers=kwargs.get('finetune_layers', 2),
             hidden_dim=kwargs.get('hidden_dim', 64),
             dropout=kwargs.get('dropout', 0.2),
             num_layers=kwargs.get('num_layers', 2),
-            device=device
         )
+        model = UpstreamFinetune(model_config,config["PATH_TO_PRETRAINED_MODELS"],device)
 
     else:
         raise ValueError(f"Unknown model type: {model_type}")
@@ -251,13 +275,7 @@ def run_experiment(model_type,device='cuda',**kwargs):
     wandb.finish()
     
     # Save the best model
-    os.makedirs(save_path, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    best_model_path = os.path.join(save_path, f"best_model_{timestamp}.pt")
-    torch.save({
-        'epoch': epochs,
-        'model_state_dict': model.state_dict().copy(),
-        'val_loss': results['best_val_loss'],
-        'config': wandb.config
-    }, best_model_path)
-    print(f"Best model saved to {best_model_path}")
+    save_path = config["PATH_TO_SAVED_MODELS"]
+    model_path = os.path.join(save_path,run.name)
+    model.save_pretrained(model_path)
+    print(f"Best model saved to {model_path}")

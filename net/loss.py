@@ -38,7 +38,7 @@ class CCCLoss(nn.Module):
         # Average the two losses (1 - CCC for each dimension)
         ccc_loss = 1.0 - (ccc_valence + ccc_arousal) / 2.0
         
-        return ccc_loss
+        return ccc_loss, ccc_arousal, ccc_valence
     
     def _calculate_ccc(self, pred, target):
         """Calculate CCC for a single dimension"""
