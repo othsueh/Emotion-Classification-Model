@@ -2,10 +2,10 @@
 corpus = "MSPPODCAST"
 upstream_model = "wav2vec2-base-960h"
 epoch = 25
-batch_size = 16
+batch_size = 32
 leanring_rate = 4e-5
 dropout = 0.2
-patience = 5
+patience = 10
 verbose = true
 seed = 42
 hidden_dim = 64
@@ -13,17 +13,12 @@ num_layers = 2
 use_feature = false
 
 
-# [[experiments]]
-# name = "Wav2vec2 finetune (1 layers)"
-# model_type = "UpstreamFinetune"
-# config = "base_config"
-# config_update = { finetune_layers = 1 }
-
 [[experiments]]
-name = "Wav2vec2 finetune (3 layers)"
+name = "Wav2vec2 finetune (1 layers)"
 model_type = "UpstreamFinetune"
 config = "base_config"
-config_update = { finetune_layers = 3 }
+config_update = { finetune_layers = 1 }
+
 
 # [[experiments]]
 # # LSTM with multi-head attention
