@@ -145,12 +145,12 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
 
                 if(batch_idx in batch_list):
                     arousal = dim_output[:,0].cpu()
-                    valence = dim_output[:,0].cpu()
+                    valence = dim_output[:,1].cpu()
                     log_view_table(dataset,audio.cpu().numpy(),sr,pred,true_label,arousal,valence,avd.cpu(),category_output.softmax(dim=1).cpu())
                 
 
                 progress_bar(batch_idx+1, val_length, 'Loss: %.3f | Macro F1: %.3f | Acc: %.3f | UAR: %.3f | Arousal: %.3f | Valence: %.3f' % 
-                        (train_loss/(batch_idx+1), running_macro_f1/(batch_idx+1), 
+                        (val_loss/(batch_idx+1), running_macro_f1/(batch_idx+1), 
                         running_acc/(batch_idx+1), running_uar/(batch_idx+1),
                         running_ccc_arousal/(batch_idx+1), running_ccc_valence/(batch_idx+1)))
             
