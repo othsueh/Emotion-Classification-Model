@@ -119,21 +119,22 @@ class UpstreamFinetune(PreTrainedModel):
         self.to(device)
         
     def forward(self, x, sr):
-        # Extract features from upstream model
-        features = self.feature_extractor(x,sampling_rate=sr,return_tensors='pt',padding=True).input_values
-        features = features.squeeze(0).squeeze(1)
-        features = features.cuda()
+        with torch.no_grad():   
+            # Extract features from upstream model
+            features = self.feature_extractor(x,sampling_rate=sr,return_tensors='pt',padding=True).input_values
+            features = features.squeeze(0).squeeze(1)
+            features = features.cuda()
         
-        if torch.isnan(features).any():
-            print("Warning: NaN detected in features")
-            features = torch.nan_to_num(features, nan=0.0)
+            if torch.isnan(features).any():
+                print("Warning: NaN detected in features")
+                features = torch.nan_to_num(features, nan=0.0)
         
         # For using multiple hidden states
         # upstream_hidden_state = self.upstream(features,output_hidden_states=True).hidden_states
         # upstream_hidden_state = torch.stack(upstream_hidden_state[-1:])
         # upstream_hidden_state = torch.mean(upstream_hidden_state, dim=0)
-        with torch.set_grad_enabled(True):
-            upstream_hidden_state = self.upstream(features).last_hidden_state
+      
+        upstream_hidden_state = self.upstream(features).last_hidden_state
         
         # DEBUG field
         if torch.isnan(upstream_hidden_state).any():
