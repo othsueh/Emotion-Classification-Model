@@ -57,8 +57,8 @@ class RegressionHead(nn.Module):
 
     def forward(self,x):
         output = self.regressor(x)
-        scaled_output = torch.sigmoid(output) * (self.max_score - self.min_score) + self.min_score
-        return scaled_output
+        output = torch.sigmoid(output) * (self.max_score - self.min_score) + self.min_score
+        return output
 
 
 class ClassificationHead(nn.Module):
@@ -121,7 +121,7 @@ class UpstreamFinetune(PreTrainedModel):
     def forward(self, x, sr):
         with torch.no_grad():   
             # Extract features from upstream model
-            features = self.feature_extractor(x,sampling_rate=sr,return_tensors='pt',padding=True).input_values
+            features = self.feature_extractor(x, sampling_rate=sr, return_tensors='pt', padding=True).input_values
             features = features.squeeze(0).squeeze(1)
             features = features.cuda()
         
@@ -129,20 +129,22 @@ class UpstreamFinetune(PreTrainedModel):
                 print("Warning: NaN detected in features")
                 features = torch.nan_to_num(features, nan=0.0)
         
+        # Process through upstream model
+        outputs = self.upstream(features)
+        hidden_states = outputs.last_hidden_state
+        
         # For using multiple hidden states
         # upstream_hidden_state = self.upstream(features,output_hidden_states=True).hidden_states
         # upstream_hidden_state = torch.stack(upstream_hidden_state[-1:])
         # upstream_hidden_state = torch.mean(upstream_hidden_state, dim=0)
-      
-        upstream_hidden_state = self.upstream(features).last_hidden_state
         
         # DEBUG field
-        if torch.isnan(upstream_hidden_state).any():
+        if torch.isnan(hidden_states).any():
             print("Warning: NaN detected in hidden state")
-            upstream_hidden_state = torch.nan_to_num(upstream_hidden_state, nan=0.0)
+            hidden_states = torch.nan_to_num(hidden_states, nan=0.0)
         
         # Global average pooling over the sequence length
-        pooled_features = torch.mean(upstream_hidden_state, dim=1)
+        pooled_features = torch.mean(hidden_states, dim=1)
         
         # DEBUG field
         if torch.isnan(pooled_features).any():
@@ -157,5 +159,3 @@ class UpstreamFinetune(PreTrainedModel):
             print("Warning: NaN detected in classifier output")
 
         return category, dim
-        
-        
