@@ -100,7 +100,11 @@ class UpstreamFinetune(PreTrainedModel):
         self.feature_extractor = AutoProcessor.from_pretrained(upstream_path,use_fast=False)
         self.upstream = AutoModel.from_pretrained(upstream_path)
         self.finetune_layers = config.finetune_layers
-
+        
+        # Explicitly initialize the masked_spec_embed parameter if it's causing issues
+        if hasattr(self.upstream, 'masked_spec_embed'):
+            self.upstream.masked_spec_embed = nn.Parameter(torch.zeros(self.upstream.config.hidden_size))
+    
         for param in self.upstream.parameters():
             param.requires_grad = False
             
@@ -128,8 +132,8 @@ class UpstreamFinetune(PreTrainedModel):
         # upstream_hidden_state = self.upstream(features,output_hidden_states=True).hidden_states
         # upstream_hidden_state = torch.stack(upstream_hidden_state[-1:])
         # upstream_hidden_state = torch.mean(upstream_hidden_state, dim=0)
-        
-        upstream_hidden_state = self.upstream(features).last_hidden_state
+        with torch.set_grad_enabled(True):
+            upstream_hidden_state = self.upstream(features).last_hidden_state
         
         # DEBUG field
         if torch.isnan(upstream_hidden_state).any():
