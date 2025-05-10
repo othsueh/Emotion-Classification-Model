@@ -8,5 +8,6 @@ Environment Preparation:
     ☐ Modify the path in `config.toml`
     ☐ Check the compatibility of toml library
 
-Model Preparation:
+Model & Dataset Preparation:
+    ☐ Download dataset
     ☐ Download upstream model
