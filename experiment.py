@@ -67,7 +67,8 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
             optimizer.step()
             mem_optimizer = torch.cuda.memory_allocated()
             lr_scheduler.step()
-
+            torch.cuda.empty_cache()
+            
             mem_metrics = {
                 "mem/forward": mem_forward,
                 "mem/consumed_by_forward": mem_forward - mem_preforward,
@@ -188,6 +189,8 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
             wandb.log({**train_metric,**val_metric})
             break
         wandb.log({**train_metric,**val_metric})
+        gc.collect()
+        torch.cuda.empty_cache()
 
     return model, {"best_val_loss": best_val_loss}
 
