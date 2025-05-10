@@ -51,13 +51,13 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
 
             text, audio = data["text"], data["audio"]
             # Temporary (Not using text)
-            audio = audio.cuda()
             category_output, dim_output = model(audio,sr)
 
             # Calculate forwarded memory usage
             mem_forward = torch.cuda.memory_allocated()
             
             cls_loss = category_criterion(category_output,true_label)
+            # !Debug
             reg_loss, ccc_arousal, ccc_valence = dim_criterion(dim_output,avd)
             alpha,beta = 0.5, 0.5
             total_loss = alpha * reg_loss + beta * cls_loss
@@ -67,7 +67,6 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
             optimizer.step()
             mem_optimizer = torch.cuda.memory_allocated()
             lr_scheduler.step()
-            torch.cuda.empty_cache()
             
             mem_metrics = {
                 "mem/forward": mem_forward,
@@ -84,8 +83,10 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
             running_macro_f1 += f1_score(true_label, pred, average='macro')
             running_acc += accuracy_score(true_label, pred)
             running_uar += recall_score(true_label, pred, average='macro',zero_division=0.0)
-            running_ccc_arousal += ccc_arousal
-            running_ccc_valence += ccc_valence
+            running_ccc_arousal += ccc_arousal.item()
+            running_ccc_valence += ccc_valence.item()
+
+            torch.cuda.empty_cache()
 
 
             progress_bar(batch_idx+1, train_length, 'Loss: %.3f | Macro F1: %.3f | Acc: %.3f | UAR: %.3f | Arousal: %.3f | Valence: %.3f' % 
@@ -189,8 +190,6 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
             wandb.log({**train_metric,**val_metric})
             break
         wandb.log({**train_metric,**val_metric})
-        gc.collect()
-        torch.cuda.empty_cache()
 
     return model, {"best_val_loss": best_val_loss}
 
