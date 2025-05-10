@@ -1,1 +1,10 @@
+dotenv
+datasets
+huggingface_hub
+seaborn
+soundfile
+scikit-learn
 torch
+transformers
+wandb
+webdataset
