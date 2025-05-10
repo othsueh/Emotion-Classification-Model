@@ -18,48 +18,41 @@ class CCCLoss(nn.Module):
         super(CCCLoss, self).__init__()
 
     def forward(self, pred, target):
-        """
-        Args:
-            pred: model predictions, shape [batch_size, 2]
-            target: ground truth labels, shape [batch_size, 2]
-        Returns:
-            CCC loss (average of valence and arousal CCC losses)
-        """
-        # Separate valence and arousal
-        pred_arousal, pred_valence = pred[:, 0], pred[:, 1]
-        target_arousal, target_valence = target[:, 0], target[:, 1]
+        # Clone tensors to avoid modifying the originals
+        pred = pred.clone()
+        target = target.clone()
         
-        # Calculate CCC for valence
-        ccc_valence = self._calculate_ccc(pred_valence, target_valence)
+        # Calculate CCC for arousal (dim 0) and valence (dim 1)
+        arousal_ccc = self._calculate_ccc(pred[:, 0], target[:, 0])
+        valence_ccc = self._calculate_ccc(pred[:, 1], target[:, 1])
         
-        # Calculate CCC for arousal 
-        ccc_arousal = self._calculate_ccc(pred_arousal, target_arousal)
+        # Total loss is negative average CCC (to minimize)
+        loss = 1 - (arousal_ccc + valence_ccc) / 2
         
-        # Average the two losses (1 - CCC for each dimension)
-        ccc_loss = 1.0 - (ccc_valence + ccc_arousal) / 2.0
+        # Detach CCC values for logging (important to prevent memory leaks)
+        arousal_ccc_detached = arousal_ccc.detach()
+        valence_ccc_detached = valence_ccc.detach()
         
-        return ccc_loss, ccc_arousal, ccc_valence
+        return loss, arousal_ccc_detached, valence_ccc_detached
     
     def _calculate_ccc(self, pred, target):
-        """Calculate CCC for a single dimension"""
+        # Mean and variance calculations
         pred_mean = torch.mean(pred)
         target_mean = torch.mean(target)
         
         pred_var = torch.var(pred, unbiased=False)
         target_var = torch.var(target, unbiased=False)
         
-        # Covariance
-        pred_centered = pred - pred_mean
-        target_centered = target - target_mean
-        covariance = torch.mean(pred_centered * target_centered)
+        # Covariance calculation
+        cov = torch.mean((pred - pred_mean) * (target - target_mean))
         
         # CCC formula
-        numerator = 2.0 * covariance
+        numerator = 2 * cov
         denominator = pred_var + target_var + (pred_mean - target_mean) ** 2
         
         # Avoid division by zero
-        eps = 1e-8
-        ccc = numerator / (denominator + eps)
+        epsilon = 1e-8
+        ccc = numerator / (denominator + epsilon)
         
         return ccc
 
