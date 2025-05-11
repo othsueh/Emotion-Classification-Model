@@ -94,7 +94,7 @@ class ClassificationHead(nn.Module):
 
 class UpstreamFinetune(PreTrainedModel):
     config_class = UpstreamFinetuneConfig
-    def __init__(self, config, pretrained_path,device):
+    def __init__(self, config, pretrained_path = None,device = None):
         super().__init__(config)
         upstream_path = os.path.join(pretrained_path, config.upstream_model)
         self.feature_extractor = AutoProcessor.from_pretrained(upstream_path,use_fast=False)
@@ -159,3 +159,34 @@ class UpstreamFinetune(PreTrainedModel):
             print("Warning: NaN detected in classifier output")
 
         return category, dim
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path, *model_args, **kwargs):
+        # Extract device and pretrained_path before calling parent method
+        device = kwargs.pop('device', None)
+        pretrained_path = kwargs.pop('pretrained_path', None)
+        
+        # Call the parent class from_pretrained method
+        model = super().from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs)
+        
+        # If pretrained_path was provided, ensure it's properly set
+        if pretrained_path is not None and not hasattr(model, 'feature_extractor'):
+            config = model.config
+            upstream_path = os.path.join(pretrained_path, config.upstream_model)
+            model.feature_extractor = AutoProcessor.from_pretrained(upstream_path, use_fast=False)
+            model.upstream = AutoModel.from_pretrained(upstream_path)
+            
+            # Set up finetuning layers
+            for param in model.upstream.parameters():
+                param.requires_grad = False
+                
+            for i in range(1, model.finetune_layers + 1):
+                for param in model.upstream.encoder.layers[-i].parameters():
+                    param.requires_grad = True
+            
+            # Handle the masked_spec_embed
+            if hasattr(model.upstream, 'masked_spec_embed'):
+                model.upstream.masked_spec_embed = nn.Parameter(torch.zeros(model.upstream.config.hidden_size))
+            
+        return model
+        
+        
