@@ -1,8 +1,9 @@
 [base_config]
 corpus = "MSPPODCAST"
+origin_upstream_url = "facebook/wav2vec2-base-960h"
 upstream_model = "wav2vec2-base-960h"
 epoch = 25
-batch_size = 32
+batch_size = 16
 leanring_rate = 4e-5
 dropout = 0.2
 patience = 10

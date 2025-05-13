@@ -3,11 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import os
 from transformers import PretrainedConfig, PreTrainedModel, AutoProcessor, AutoModel
+from safetensors.torch import load_file
 
 class UpstreamFinetuneConfig(PretrainedConfig):
     model_type = "wav2vec2-emodualhead"
     def __init__(
         self,
+        origin_upstream_url = "facebook/wav2vec2-base-960h",
         upstream_model="wav2vec2-base-960h",  # Reference to base model
         finetune_layers = 0 , # Prevent overhead gpu usage
         hidden_dim = 64, 
@@ -17,6 +19,7 @@ class UpstreamFinetuneConfig(PretrainedConfig):
         regressor_output_dim=2,
         **kwargs
     ):
+        self.origin_upstream_url = origin_upstream_url
         self.upstream_model = upstream_model
         self.dropout = dropout
         self.finetune_layers = finetune_layers
@@ -96,7 +99,10 @@ class UpstreamFinetune(PreTrainedModel):
     config_class = UpstreamFinetuneConfig
     def __init__(self, config, pretrained_path = None,device = None):
         super().__init__(config)
-        upstream_path = os.path.join(pretrained_path, config.upstream_model)
+        if pretrained_path is None:
+            upstream_path = config.origin_upstream_url
+        else:
+            upstream_path = os.path.join(pretrained_path, config.upstream_model)
         self.feature_extractor = AutoProcessor.from_pretrained(upstream_path,use_fast=False)
         self.upstream = AutoModel.from_pretrained(upstream_path)
         self.finetune_layers = config.finetune_layers
@@ -160,33 +166,36 @@ class UpstreamFinetune(PreTrainedModel):
 
         return category, dim
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path, *model_args, **kwargs):
-        # Extract device and pretrained_path before calling parent method
+    def from_pretrained(cls, model_path, pretrained_model_name_or_path = None, *model_args, **kwargs):
+        # Extract config and device from kwargs if provided
         device = kwargs.pop('device', None)
         pretrained_path = kwargs.pop('pretrained_path', None)
         
-        # Call the parent class from_pretrained method
-        model = super().from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs)
+        # Load the configuration
+        config = kwargs.pop('config', None)
+        if config is None:
+            config = cls.config_class.from_pretrained(model_path, **kwargs)
         
-        # If pretrained_path was provided, ensure it's properly set
-        if pretrained_path is not None and not hasattr(model, 'feature_extractor'):
-            config = model.config
-            upstream_path = os.path.join(pretrained_path, config.upstream_model)
-            model.feature_extractor = AutoProcessor.from_pretrained(upstream_path, use_fast=False)
-            model.upstream = AutoModel.from_pretrained(upstream_path)
-            
-            # Set up finetuning layers
-            for param in model.upstream.parameters():
-                param.requires_grad = False
-                
-            for i in range(1, model.finetune_layers + 1):
-                for param in model.upstream.encoder.layers[-i].parameters():
-                    param.requires_grad = True
-            
-            # Handle the masked_spec_embed
-            if hasattr(model.upstream, 'masked_spec_embed'):
-                model.upstream.masked_spec_embed = nn.Parameter(torch.zeros(model.upstream.config.hidden_size))
-            
+        # Create model instance with the config
+        model = cls(config=config, pretrained_path=pretrained_model_name_or_path, device=device, *model_args, **kwargs)
+        
+        model_bin_path = os.path.join(model_path, "pytorch_model.bin")
+        model_safetensors_path = os.path.join(model_path, "model.safetensors")
+
+        if os.path.exists(model_safetensors_path):
+            print(f"Loading model weights from {model_safetensors_path}...")
+            state_dict = load_file(model_safetensors_path)
+            model.load_state_dict(state_dict)
+        elif os.path.exists(model_bin_path):
+            print(f"Loading model weights from {model_bin_path}...")
+            state_dict = torch.load(model_bin_path, map_location="cpu")
+            model.load_state_dict(state_dict)
+        else:
+            raise FileNotFoundError(f"No model weights found at {model_path}. Expected either 'pytorch_model.bin' or 'model.safetensors'")
+        
+        # Set model to eval mode by default
+        model.eval()
+        
         return model
         
         

@@ -231,6 +231,7 @@ def run_experiment(model_type,device='cuda',**kwargs):
 
     if model_type == 'UpstreamFinetune':
         model_config = UpstreamFinetuneConfig(
+            origin_upstream_url=kwargs.get('origin_upstream_url',"facebook/wav2vec2-base-960h"),
             upstream_model=kwargs.get('upstream_model', "wav2vec2-base-960h"),
             finetune_layers=kwargs.get('finetune_layers', 2),
             hidden_dim=kwargs.get('hidden_dim', 64),
