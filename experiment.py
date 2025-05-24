@@ -219,6 +219,7 @@ def run_experiment(model_type,device='cuda',**kwargs):
             "batch_size": batch_size,
             "learning_rate": learning_rate,
             "use_feature": use_feature,
+            "use_emotion_embedding": kwargs.get('use_emotion_embedding',False),
             "dropout": kwargs.get('dropout',0.2),
             "model_type": model_type,
             "upstream_model": kwargs.get('upstream_model',"wav2vec2-large-960h"),
