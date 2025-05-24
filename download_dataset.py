@@ -33,7 +33,7 @@ def parse_arguments():
     parser.add_argument(
         "--method", 
         choices=["datasets", "snapshot", "file"],
-        default="datasets",
+        default="snapshot", #For multi process download
         help="Method to download the dataset: 'datasets' API, 'snapshot' for whole repo, or 'file' for specific file"
     )
     parser.add_argument(
