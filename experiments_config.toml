@@ -13,7 +13,7 @@ hidden_dim = 64
 classifier_output_dim = 9
 num_layers = 2
 use_feature = false
-
+use_emotion_embedding = false
 
 [[experiments]]
 name = "Wav2vec2 finetune (1 layers)"
