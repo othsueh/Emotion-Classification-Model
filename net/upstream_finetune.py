@@ -36,7 +36,7 @@ class UpstreamFinetuneConfig(PretrainedConfig):
         super().__init__(**kwargs)
 
 class RegressionHead(nn.Module):
-    def __init__(self,first_dim,hidden_dim,dropout, num_layers, min_score = 1.0, max_score = 7.0):
+    def __init__(self,first_dim,hidden_dim,dropout, num_layers, min_score = 0.0, max_score = 1.0):
         super().__init__()
         self.min_score = min_score
         self.max_score = max_score
@@ -83,7 +83,7 @@ class ClassificationHead(nn.Module):
         return (output, embedding) if return_embedding else output
 
 class HierarchicalDCRegressionHead(nn.Module):
-    def __init__(self, classifier_embed_dim, cont_embed_dim, dropout, min_score=1.0, max_score=7.0):
+    def __init__(self, classifier_embed_dim, cont_embed_dim, dropout, min_score=0.0, max_score=1.0):
         super().__init__()
         self.min_score = min_score
         self.max_score = max_score
