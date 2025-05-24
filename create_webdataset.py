@@ -11,15 +11,16 @@ from utils import *
 import os
 
 # Global variable
-corpus = 'MSPPODCAST'
-audio_path = config[corpus]['PATH_TO_AUDIO']
-transcript_path = config[corpus]['PATH_TO_TRANSCRIPT']
+corpus = 'TOTAL'
+iemocap_path = config['IEMOCAP']['PATH_TO_AUDIO']
+podcast_path = config['MSPPODCAST']['PATH_TO_AUDIO']
+# transcript_path = config[corpus]['PATH_TO_TRANSCRIPT']
 
 # Function to process a single shard - moved outside to work with multiprocessing
 def process_shard(shard_info):
     shard_idx, start_idx = shard_info
     # Get global variables needed for processing
-    global audio_path, transcript_path
+    global iemocap_path, podcast_path
     
     # Get dataframe from the parent scope
     df = create_webdataset_shards.df
@@ -41,33 +42,42 @@ def process_shard(shard_info):
     # Process samples for this shard
     for idx, row in shard_df.iterrows():
         sample_id = row['FileName'].split('.')[0]
+        if(row['Corpus'] == 'MSP-IMPROV'):
+            continue
         try:
             # Prepare the metadata
             metadata = {
-                'angry': float(row['angry']),
-                'sad': float(row['sad']),
-                'disgust': float(row['disgust']),
-                'contempt': float(row['contempt']),
-                'fear': float(row['fear']),
-                'neutral': float(row['neutral']),
-                'surprise': float(row['surprise']),
-                'happy': float(row['happy']),
+                # 'angry': float(row['angry']),
+                # 'sad': float(row['sad']),
+                # 'disgust': float(row['disgust']),
+                # 'contempt': float(row['contempt']),
+                # 'fear': float(row['fear']),
+                # 'neutral': float(row['neutral']),
+                # 'surprise': float(row['surprise']),
+                # 'happy': float(row['happy']),
                 'EmoAct': float(row['EmoAct']),
                 'EmoVal': float(row['EmoVal']),
-                'EmoDom': float(row['EmoDom']),
-                'SpkrID': row['SpkrID'],
+                # 'EmoDom': float(row['EmoDom']),
+                'dominant_emotion': row['dominant_emotion'],
+                # 'SpkrID': row['SpkrID'],
                 'gender': row['Gender'],
-                'split': row['Split_Set']
+                'split': row['Split_Set'],
+                'corpus': row['Corpus']
             }
             
             # Get audio file path (adjust the pattern based on your file naming)
-            audio_file_path = os.path.join(audio_path, f"{sample_id}.wav")  # Adjust extension if needed
+            if (row['Corpus'] == 'IEMOCAP'):
+                audio_file_path = os.path.join(iemocap_path, f"{sample_id}.wav")  # Adjust extension if needed
+            elif(row['Corpus'] == 'MSP-PODCAST'):
+                audio_file_path = os.path.join(podcast_path, f"{sample_id}.wav")  # Adjust extension if needed
+
+
             
             # Get transcription file path
-            trans_path = os.path.join(transcript_path, f"{sample_id}.txt")  # Adjust extension if needed
+            # trans_path = os.path.join(transcript_path, f"{sample_id}.txt")  # Adjust extension if needed
             
-            if os.path.exists(audio_file_path) and os.path.exists(trans_path):
-            
+            # if os.path.exists(audio_file_path) and os.path.exists(trans_path):
+            if os.path.exists(audio_file_path):
                 # Load audio using torchaudio
                 waveform, sample_rate = torchaudio.load(audio_file_path)
                 
@@ -77,14 +87,14 @@ def process_shard(shard_info):
                 audio_bytes = buffer.getvalue()
                 
                 # Read the transcription
-                with open(trans_path, 'r', encoding='utf-8') as f:
-                    trans_data = f.read()
+                # with open(trans_path, 'r', encoding='utf-8') as f:
+                #     trans_data = f.read()
                 
                 # Write to WebDataset
                 sample = {
                     "__key__": f"{sample_id}",
                     "audio": audio_bytes,
-                    "text": trans_data,
+                    # "text": trans_data,
                     "json": json.dumps(metadata)
                 }
                 sink.write(sample)
@@ -124,16 +134,17 @@ def main():
     main_df = pd.read_csv(config[corpus]['PATH_TO_LABEL'])
     output_dir = config[corpus]['PATH_TO_DATASET']
     
-    # DEBUG field
-    # splits = main_df['Split_Set'].unique()
-    # print(f'There are {len(splits)} splits:')
-    # for s in splits:
-    #     print(s)
+
+    # Test set only
+    # split_dir = f"{output_dir}/test"
+    # os.makedirs(split_dir, exist_ok=True)
+    # create_webdataset_shards(split_dir,"test",main_df,4000)
+
 
     # Group by split
     train_df = main_df[main_df['Split_Set'] == 'Train']
     dev_df = main_df[main_df['Split_Set'] == 'Development'] 
-    test_df = main_df[main_df['Split_Set'] == 'Test']
+    # test_df = main_df[main_df['Split_Set'] == 'Test']
 
     groups = [
         {
@@ -146,18 +157,17 @@ def main():
             'df': dev_df,
             'samples_per_shard': 4000
         },
-        {
-            'name': 'test',
-            'df': test_df,
-            'samples_per_shard': 4000
-        },
+        # {
+        #     'name': 'test',
+        #     'df': test_df,
+        #     'samples_per_shard': 4000
+        # },
     ]
 
     for split in groups:
-        if split['name'] == 'test':
-            split_dir = f"{output_dir}/{split['name']}"
-            os.makedirs(split_dir, exist_ok=True)
-            create_webdataset_shards(split_dir,split['name'],split['df'],split['samples_per_shard'])
+        split_dir = f"{output_dir}/{split['name']}"
+        os.makedirs(split_dir, exist_ok=True)
+        create_webdataset_shards(split_dir,split['name'],split['df'],split['samples_per_shard'])
 
 
 if __name__ == '__main__':

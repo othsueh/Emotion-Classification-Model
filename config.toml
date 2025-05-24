@@ -8,7 +8,21 @@ WHISPER = ['whisper-large-v3']
 AM = ['wavlm-large','hubert-xlarge-ls960-ft','wav2vec2-large-960h','wav2vec2-large-960h-lv60-self']
 
 [MSPPODCAST]
-PATH_TO_LABEL='/datas/store162/othsueh/MSP-Podcast/Labels/emosuperb_consensus.csv'
+PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/test/msp_podcast_test.csv'
 PATH_TO_AUDIO='/datas/store162/othsueh/MSP-Podcast/Audios'
 PATH_TO_TRANSCRIPT='/datas/store162/othsueh/MSP-Podcast/Transcripts'
 PATH_TO_DATASET='/datas/store162/othsueh/webdataset_msppodcast'
+
+[IEMOCAP]
+PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/test/iemocap_test.csv'
+PATH_TO_AUDIO='/datas/store162/othsueh/IEMOCAP/Audios'
+PATH_TO_DATASET='/datas/store162/othsueh/IEMOCAP'
+
+[CREMAD]
+PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/test/crema_d_test.csv'
+PATH_TO_DATASET='/datas/store162/othsueh/CREMA-D'
+PATH_TO_AUDIO='/datas/store162/othsueh/CREMA-D/AudioWAV'
+
+[TOTAL]
+PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_eps0.045.csv'
+PATH_TO_DATASET='/datas/store162/othsueh/webdataset_total'

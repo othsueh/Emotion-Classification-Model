@@ -1,3 +1,9 @@
+"""
+This is the v2 version of my upstream_finetune model. The v1 version is in commit dce83ab.
+The v2 architecture's idea is inspired by the approach described in https://arxiv.org/abs/2210.16642.
+"""
+
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -39,9 +45,6 @@ class RegressionHead(nn.Module):
         input_dim = first_dim
         for i in range(num_layers):
             linear = nn.Linear(input_dim, hidden_dim)
-            # Initialize weights using Xavier/Glorot initialization
-            nn.init.xavier_uniform_(linear.weight)
-            nn.init.zeros_(linear.bias)
             
             layers.extend([
                 linear,
@@ -65,35 +68,37 @@ class RegressionHead(nn.Module):
 
 
 class ClassificationHead(nn.Module):
-    def __init__(self,first_dim,hidden_dim,dropout, num_layers, num_labels):
+    def __init__(self, first_dim, hidden_dim, dropout, num_layers, num_labels):
         super().__init__()
+        self.hidden_layers = nn.Sequential(*[
+            layer for i in range(num_layers)
+            for layer in (nn.Linear(first_dim if i == 0 else hidden_dim, hidden_dim), nn.Tanh(), nn.Dropout(dropout))
+        ])
+        self.out_proj = nn.Linear(hidden_dim, num_labels)
+        self.embedding_dim = hidden_dim
 
-        layers = []
-        input_dim = first_dim
-        for i in range(num_layers):
-            linear = nn.Linear(input_dim, hidden_dim)
-            # Initialize weights using Xavier/Glorot initialization
-            nn.init.xavier_uniform_(linear.weight)
-            nn.init.zeros_(linear.bias)
-            
-            layers.extend([
-                linear,
-                nn.Tanh(),
-                nn.Dropout(dropout)
-            ])
-            input_dim = hidden_dim
-            
-        # Final classification layer
-        final_layer = nn.Linear(hidden_dim, num_labels)
-        nn.init.xavier_uniform_(final_layer.weight)
-        nn.init.zeros_(final_layer.bias)
-        layers.append(final_layer)
-        
-        self.classifier = nn.Sequential(*layers)
+    def forward(self, x, return_embedding=False):
+        embedding = self.hidden_layers(x)
+        output = self.out_proj(embedding)
+        return (output, embedding) if return_embedding else output
 
-    def forward(self,x):
-        output = self.classifier(x)
-        return output
+class HierarchicalDCRegressionHead(nn.Module):
+    def __init__(self, classifier_embed_dim, cont_embed_dim, dropout, min_score=1.0, max_score=7.0):
+        super().__init__()
+        self.min_score = min_score
+        self.max_score = max_score
+        self.fusion_layer = nn.Sequential(
+            nn.Linear(classifier_embed_dim + cont_embed_dim, cont_embed_dim),
+            nn.Tanh(),
+            nn.Dropout(dropout),
+            nn.Linear(cont_embed_dim, 2)
+        )
+
+    def forward(self, ed, ec):
+        x = torch.cat([ed, ec], dim=-1)
+        out = self.fusion_layer(x)
+        return torch.sigmoid(out) * (self.max_score - self.min_score) + self.min_score
+
 
 class UpstreamFinetune(PreTrainedModel):
     config_class = UpstreamFinetuneConfig
@@ -119,9 +124,17 @@ class UpstreamFinetune(PreTrainedModel):
                 param.requires_grad = True
                 
         input_dim = self.upstream.config.hidden_size
-        self.classifier = ClassificationHead(input_dim,config.hidden_dim,config.dropout,config.num_layers,config.classifier_output_dim)
-        self.regressor = RegressionHead(input_dim,config.hidden_dim,config.dropout,config.num_layers)
-
+        self.classifier = ClassificationHead(input_dim, config.hidden_dim, config.dropout, config.num_layers, config.classifier_output_dim)
+        self.cont_proj = nn.Sequential(
+            nn.Linear(input_dim, config.hidden_dim),
+            nn.Tanh(),
+            nn.Dropout(config.dropout)
+        )
+        self.regressor = HierarchicalDCRegressionHead(
+            classifier_embed_dim=config.hidden_dim,
+            cont_embed_dim=config.hidden_dim,
+            dropout=config.dropout
+        )
         self.to(device)
         
     def forward(self, x, sr):
@@ -157,14 +170,17 @@ class UpstreamFinetune(PreTrainedModel):
             print("Warning: NaN detected in pooled features")
         
         # Pass through classifier
-        category = self.classifier(pooled_features)
-        dim = self.regressor(pooled_features)
-        
-        # DEBUG field
-        if torch.isnan(category).any():
-            print("Warning: NaN detected in classifier output")
+        # Get discrete output and embedding
+        category, ed = self.classifier(pooled_features, return_embedding=True)
+
+        # Get continuous embedding
+        ec = self.cont_proj(pooled_features)
+
+        # Use ED and EC to predict continuous values
+        dim = self.regressor(ed, ec)
 
         return category, dim
+
     @classmethod
     def from_pretrained(cls, model_path, pretrained_model_name_or_path = None, *model_args, **kwargs):
         # Extract config and device from kwargs if provided
