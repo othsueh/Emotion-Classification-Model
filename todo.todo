@@ -20,7 +20,7 @@ Write test code:
     ✔ Write the evaluation part @done(25-01-25 20:46)
 
 Adapt with wandb:
-    ☐ (LOW) Modify the TestDataset Generation Code
+    ✘ (LOW) Modify the TestDataset Generation Code @cancelled(25-05-24 14:55)
 
 Code refactoring: 
     ✔ Add main file @started(25-04-15 17:15) @done(25-04-15 18:44) @lasted(1h29m15s)
@@ -35,7 +35,7 @@ Code refactoring:
         ✔ Write trainer @started(25-04-16 17:24) @done(25-04-16 21:39) @lasted(4h15m4s)
         ✔ Write validator @done(25-04-16 21:39)
     ✔ Update dotenv wandb api @done(25-05-07 16:27)
-    ☐ Add huggingface token
+    ✔ Add huggingface token @done(25-05-24 14:55)
     ☐ Improve experiment file
         ☐ Set Maximum trainable parameters to prevent crash
         ☐ Verbose is not complete
@@ -44,9 +44,14 @@ Code refactoring:
 New Update:
     ✔ Add regressor function @done(25-05-08 11:48)
     ✔ Get the CCC of valence and arousal and put it into report @done(25-05-08 17:54)
-    ☐ Check is test data exist?
-    ☐ Download the pretrained model back
+    ✔ Check is test data exist? @done(25-05-24 14:55)
+    ✔ Download the pretrained model back @done(25-05-24 14:55)
     ☐ Calculate the memory usage
+New Dataset Experiment: 
+    ✔ Remove the scheduler @done(25-05-24 15:19)
+    ✔ Write new collate function for new dataset @done(25-05-24 15:19)
+    ☐ Wandb add new content
+    ☐ Test the new model archietecture
 
 
 

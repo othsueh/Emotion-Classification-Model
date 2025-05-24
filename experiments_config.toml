@@ -1,5 +1,5 @@
 [base_config]
-corpus = "MSPPODCAST"
+corpus = "TOTAL"
 origin_upstream_url = "facebook/wav2vec2-base-960h"
 upstream_model = "wav2vec2-base-960h"
 epoch = 25
@@ -10,6 +10,7 @@ patience = 10
 verbose = true
 seed = 42
 hidden_dim = 64
+classifier_output_dim = 9
 num_layers = 2
 use_feature = false
 
@@ -20,6 +21,24 @@ model_type = "UpstreamFinetune"
 config = "base_config"
 config_update = { finetune_layers = 1 }
 
+# For remote running
+# [[experiments]]
+# name = "Wav2vec2 finetune (2 layers)"
+# model_type = "UpstreamFinetune"
+# config = "base_config"
+# config_update = { finetune_layers = 2 }
+
+# [[experiments]]
+# name = "Wav2vec2 finetune (3 layers)"
+# model_type = "UpstreamFinetune"
+# config = "base_config"
+# config_update = { finetune_layers = 3 }
+
+# [[experiments]]
+# name = "Wav2vec2 finetune (4 layers)"
+# model_type = "UpstreamFinetune"
+# config = "base_config"
+# config_update = { finetune_layers = 4 }
 
 # [[experiments]]
 # # LSTM with multi-head attention

@@ -9,5 +9,5 @@ Environment Preparation:
     ☐ Check the compatibility of toml library
 
 Model & Dataset Preparation:
-    ☐ Download dataset
+    ☐ Download dataset: `python download_dataset.py --dataset "othsueh/MSP-Podcast"`
     ☐ Download upstream model

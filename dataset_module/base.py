@@ -93,7 +93,6 @@ class BaseDataset:
             .shuffle(1000)
             .map_dict(
                 audio=lambda x: torch.load(io.BytesIO(x), weights_only=True),
-                text=lambda x: x.decode('utf-8'),
                 json=lambda x: json.loads(x.decode('utf-8'))
             )
             .select(lambda x: x['audio'] is not None)

@@ -10,16 +10,17 @@ from dataset_module import *
 sr = 16000
 
 def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rate,use_feature,length, total_steps,patience):
-    sample_per_class = [6716,6400,16652,2992,1134,1419,2519,29144]
+    sample_per_class = dataset.sample_per_class
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     category_criterion = BalancedSoftmaxLoss(sample_per_class)
     dim_criterion = CCCLoss()
-    lr_scheduler = get_scheduler(
-        name="linear",                 
-        optimizer=optimizer,
-        num_warmup_steps=500,
-        num_training_steps=total_steps
-    )
+    # Scheduler commented out but kept for reference
+    # lr_scheduler = get_scheduler(
+    #     name="linear",                 
+    #     optimizer=optimizer,
+    #     num_warmup_steps=500,
+    #     num_training_steps=total_steps
+    # )
     batch_list = [0,1,2,3]
 
     # Early stopping variables
@@ -42,15 +43,15 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
 
         for batch_idx, data in enumerate(train_loader):
             
-            category, avd = data["category"], data["avd"] # avd not use in current model
+            category, av = data["category"], data["av"] # av not use in current model
             true_label = torch.argmax(category, dim=1).cuda()
-            avd = avd.cuda()
+            av = av.cuda()
 
             # Calculate preforward memory usage
             mem_preforward = torch.cuda.memory_allocated()
 
-            text, audio = data["text"], data["audio"]
-            # Temporary (Not using text)
+            audio = data["audio"]
+            
             category_output, dim_output = model(audio,sr)
 
             # Calculate forwarded memory usage
@@ -58,15 +59,16 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
             
             cls_loss = category_criterion(category_output,true_label)
             # !Debug
-            reg_loss, ccc_arousal, ccc_valence = dim_criterion(dim_output,avd)
-            alpha,beta = 0.5, 0.5
+            reg_loss, ccc_arousal, ccc_valence = dim_criterion(dim_output,av)
+            alpha,beta = 1, 1
             total_loss = alpha * reg_loss + beta * cls_loss
             optimizer.zero_grad()
             total_loss.backward()
             mem_backward = torch.cuda.memory_allocated()
             optimizer.step()
             mem_optimizer = torch.cuda.memory_allocated()
-            lr_scheduler.step()
+            # Scheduler step commented out
+            # lr_scheduler.step()
             
             mem_metrics = {
                 "mem/forward": mem_forward,
@@ -123,17 +125,16 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
         with torch.no_grad():
             for batch_idx, data in enumerate(val_loader):
                 
-                category, avd = data["category"], data["avd"] # avd not use in current model
+                category, av = data["category"], data["av"] # av not use in current model
                 true_label = torch.argmax(category, dim=1).cuda()
-                avd = avd.cuda()
+                av = av.cuda()
 
-                text, audio = data["text"], data["audio"]
-                # Temporary (Not using text)
+                audio = data["audio"]
                 audio = audio.squeeze(1).cuda()
                 category_output, dim_output = model(audio,sr)
 
                 cls_loss = category_criterion(category_output,true_label)
-                reg_loss, ccc_arousal, ccc_valence = dim_criterion(dim_output,avd)
+                reg_loss, ccc_arousal, ccc_valence = dim_criterion(dim_output,av)
                 total_loss = alpha * reg_loss + beta * cls_loss
                 val_loss += total_loss.item()
                 
@@ -148,7 +149,7 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
                 if(batch_idx in batch_list):
                     arousal = dim_output[:,0].cpu()
                     valence = dim_output[:,1].cpu()
-                    log_view_table(dataset,audio.cpu().numpy(),sr,pred,true_label,arousal,valence,avd.cpu(),category_output.softmax(dim=1).cpu())
+                    log_view_table(dataset,audio.cpu().numpy(),sr,pred,true_label,arousal,valence,av.cpu(),category_output.softmax(dim=1).cpu())
                 
 
                 progress_bar(batch_idx+1, val_length, 'Loss: %.3f | Macro F1: %.3f | Acc: %.3f | UAR: %.3f | Arousal: %.3f | Valence: %.3f' % 
@@ -210,8 +211,8 @@ def run_experiment(model_type,device='cuda',**kwargs):
 
     wandb.login(key=WANDB_TOKEN)
     run = wandb.init(
-        project="MSP-Podcast",
-        tags=["baseline","Finetune try"], 
+        project="Total Set",
+        tags=["baseline","Finetune","Dual Head"], 
         config = {
             "seed": seed,
             "epochs": epochs,
@@ -223,7 +224,8 @@ def run_experiment(model_type,device='cuda',**kwargs):
             "upstream_model": kwargs.get('upstream_model',"wav2vec2-large-960h"),
             "finetune_layers": kwargs.get('finetune_layers',1),
             "hidden_dim": kwargs.get('hidden_dim',64),
-            "num_layers": kwargs.get('num_layers',42),
+            "num_layers": kwargs.get('num_layers',2),
+            "classifier_output_dim": kwargs.get('classifier_output_dim', 8),
         }
     )
 
@@ -237,6 +239,7 @@ def run_experiment(model_type,device='cuda',**kwargs):
             hidden_dim=kwargs.get('hidden_dim', 64),
             dropout=kwargs.get('dropout', 0.2),
             num_layers=kwargs.get('num_layers', 2),
+            classifier_output_dim=kwargs.get('classifier_output_dim', 8),
         )
         model = UpstreamFinetune(model_config,config["PATH_TO_PRETRAINED_MODELS"],device)
 
@@ -252,7 +255,7 @@ def run_experiment(model_type,device='cuda',**kwargs):
     random.seed(seed)
 
     # Dataset Preparation (Just need to load webdataset)
-    dataset = MSPPodcast(config[corpus]['PATH_TO_DATASET'])
+    dataset = CombineCorpus(config[corpus]['PATH_TO_DATASET'])
     train_samples = dataset.train_counts
     val_samples = dataset.validation_counts
     train_loader = dataset.create_dataloader('train',batch_size)
