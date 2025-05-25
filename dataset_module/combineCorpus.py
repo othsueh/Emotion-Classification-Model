@@ -13,7 +13,7 @@ class CombineCorpus(BaseDataset):
             'disgust',
             'contempt']
 
-        self.sample_per_class = [454, 38393, 22712, 7679, 3448, 7402, 1143, 1673, 3639]
+        self.sample_per_class = [76, 32131, 18645, 5003, 2687, 6016, 844, 1184, 2287]
         self.train_counts = 68873
         self.validation_counts = 17670
         self.test_counts = 45462
