@@ -112,6 +112,7 @@ class UpstreamFinetune(PreTrainedModel):
         self.upstream = AutoModel.from_pretrained(upstream_path)
         self.finetune_layers = config.finetune_layers
         
+        # Comment out for wav2vec2 base
         # Explicitly initialize the masked_spec_embed parameter if it's causing issues
         # if hasattr(self.upstream, 'masked_spec_embed'):
         #     self.upstream.masked_spec_embed = nn.Parameter(torch.zeros(self.upstream.config.hidden_size))

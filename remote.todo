@@ -11,3 +11,5 @@ Environment Preparation:
 Model & Dataset Preparation:
     ☐ Download dataset: `python download_dataset.py --dataset "othsueh/MSP-Podcast"`
     ☐ Download upstream model
+    ☐ Update `combineCorpus.py` 
+    ☐ Check `upstream_finetune.py`

@@ -3,6 +3,8 @@ from .base import *
 class CombineCorpus(BaseDataset):
     def __init__(self,dataset_dir):
         super().__init__(dataset_dir)
+        # Need to change when using different dataset
+        # [
         self.emotions = ['frustrated',
             'neutral',
             'happy',
@@ -17,6 +19,7 @@ class CombineCorpus(BaseDataset):
         self.sample_per_class = [8, 3213, 1864, 500, 269, 602, 84, 118, 229]
         self.train_counts = 6887
         self.validation_counts = 1768
+        # ]
         # Full version
         # self.sample_per_class = [76, 32131, 18645, 5003, 2687, 6016, 844, 1184, 2287]
         # self.train_counts = 68873

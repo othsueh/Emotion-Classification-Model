@@ -89,7 +89,7 @@ class BaseDataset:
         
         # Use the actual matching files instead of the pattern
         dataset = (
-            wds.WebDataset(matching_files, shardsshuffle=False, )
+            wds.WebDataset(matching_files, shardsshuffle=False, ) # Don't know what's shardsshuffle
             .shuffle(1000)
             .map_dict(
                 audio=lambda x: torch.load(io.BytesIO(x), weights_only=True),
