@@ -89,7 +89,7 @@ class BaseDataset:
         
         # Use the actual matching files instead of the pattern
         dataset = (
-            wds.WebDataset(matching_files, shardshuffle=shuffle)
+            wds.WebDataset(matching_files, shardsshuffle=False, )
             .shuffle(1000)
             .map_dict(
                 audio=lambda x: torch.load(io.BytesIO(x), weights_only=True),
@@ -98,10 +98,13 @@ class BaseDataset:
             .select(lambda x: x['audio'] is not None)
         )
 
+        # Adjust number of workers based on available shards
+        effective_workers = min(num_workers, max(1, len(matching_files)))
+
         loader = DataLoader(
             dataset,
             batch_size=batch_size,
-            num_workers=num_workers,
+            num_workers=effective_workers,
             shuffle=False,
             collate_fn=self.get_collate_fn()  # Use the collate function from the class
         )

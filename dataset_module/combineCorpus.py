@@ -13,9 +13,14 @@ class CombineCorpus(BaseDataset):
             'disgust',
             'contempt']
 
-        self.sample_per_class = [76, 32131, 18645, 5003, 2687, 6016, 844, 1184, 2287]
-        self.train_counts = 68873
-        self.validation_counts = 17670
+        # 10% version
+        self.sample_per_class = [8, 3213, 1864, 500, 269, 602, 84, 118, 229]
+        self.train_counts = 6887
+        self.validation_counts = 1768
+        # Full version
+        # self.sample_per_class = [76, 32131, 18645, 5003, 2687, 6016, 844, 1184, 2287]
+        # self.train_counts = 68873
+        # self.validation_counts = 17670
         self.test_counts = 45462
 
     def emotion_to_onehot(self, meta_data):

@@ -5,6 +5,7 @@ seaborn
 soundfile
 scikit-learn
 torch
+tomli
 transformers
 wandb
 webdataset

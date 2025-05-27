@@ -212,7 +212,7 @@ def run_experiment(model_type,device='cuda',**kwargs):
     wandb.login(key=WANDB_TOKEN)
     run = wandb.init(
         project="Total Set",
-        tags=["baseline","Finetune","Dual Head"], 
+        tags=["Small set","Tune Downstream","Dual Head"], 
         config = {
             "seed": seed,
             "epochs": epochs,

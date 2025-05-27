@@ -15,8 +15,8 @@ class UpstreamFinetuneConfig(PretrainedConfig):
     model_type = "wav2vec2-emodualhead"
     def __init__(
         self,
-        origin_upstream_url = "facebook/wav2vec2-base-960h",
-        upstream_model="wav2vec2-base-960h",  # Reference to base model
+        origin_upstream_url = "facebook/wav2vec2-base",
+        upstream_model="wav2vec2-base",  # Reference to base model
         finetune_layers = 0 , # Prevent overhead gpu usage
         hidden_dim = 64, 
         dropout=0.2, 
@@ -36,7 +36,7 @@ class UpstreamFinetuneConfig(PretrainedConfig):
         super().__init__(**kwargs)
 
 class RegressionHead(nn.Module):
-    def __init__(self,first_dim,hidden_dim,dropout, num_layers, min_score = 1.0, max_score = 7.0):
+    def __init__(self,first_dim,hidden_dim,dropout, num_layers, min_score = 0.0, max_score = 1.0):
         super().__init__()
         self.min_score = min_score
         self.max_score = max_score
@@ -83,7 +83,7 @@ class ClassificationHead(nn.Module):
         return (output, embedding) if return_embedding else output
 
 class HierarchicalDCRegressionHead(nn.Module):
-    def __init__(self, classifier_embed_dim, cont_embed_dim, dropout, min_score=1.0, max_score=7.0):
+    def __init__(self, classifier_embed_dim, cont_embed_dim, dropout, min_score=0.0, max_score=1.0):
         super().__init__()
         self.min_score = min_score
         self.max_score = max_score
@@ -113,8 +113,8 @@ class UpstreamFinetune(PreTrainedModel):
         self.finetune_layers = config.finetune_layers
         
         # Explicitly initialize the masked_spec_embed parameter if it's causing issues
-        if hasattr(self.upstream, 'masked_spec_embed'):
-            self.upstream.masked_spec_embed = nn.Parameter(torch.zeros(self.upstream.config.hidden_size))
+        # if hasattr(self.upstream, 'masked_spec_embed'):
+        #     self.upstream.masked_spec_embed = nn.Parameter(torch.zeros(self.upstream.config.hidden_size))
     
         for param in self.upstream.parameters():
             param.requires_grad = False

@@ -1,25 +1,53 @@
 [base_config]
 corpus = "TOTAL"
-origin_upstream_url = "facebook/wav2vec2-base-960h"
-upstream_model = "wav2vec2-base-960h"
-epoch = 25
+origin_upstream_url = "facebook/wav2vec2-base"
+upstream_model = "wav2vec2-base"
+epoch = 15
 batch_size = 16
-learning_rate = 5e-4
+learning_rate = 5e-5
 dropout = 0.2
-patience = 10
+patience = 5
 verbose = true
 seed = 42
 hidden_dim = 64
+finetune_layers = 1
 classifier_output_dim = 9
 num_layers = 2
 use_feature = false
 use_emotion_embedding = false
 
 [[experiments]]
-name = "Wav2vec2 finetune (1 layers)"
+name = "Wav2vec2 Down Head tune with small set (base config)"
 model_type = "UpstreamFinetune"
 config = "base_config"
-config_update = { finetune_layers = 1 }
+# config_update = { hidden_dim = 32 }
+
+[[experiments]]
+name = "Wav2vec2 Down Head tune with small set (num layers: 3)"
+model_type = "UpstreamFinetune"
+config = "base_config"
+config_update = { num_layers = 3 }
+
+[[experiments]]
+name = "Wav2vec2 Down Head tune with small set (num layers: 4)"
+model_type = "UpstreamFinetune"
+config = "base_config"
+config_update = { num_layers = 4 }
+
+[[experiments]]
+name = "Wav2vec2 Down Head tune with small set (hidden dimension: 128)"
+model_type = "UpstreamFinetune"
+config = "base_config"
+config_update = { hidden_dim = 128 }
+
+[[experiments]]
+name = "Wav2vec2 Down Head tune with small set (hidden dimension: 256)"
+model_type = "UpstreamFinetune"
+config = "base_config"
+config_update = { hidden_dim = 256 }
+
+
+# Drop out test
 
 # For remote running
 # [[experiments]]
