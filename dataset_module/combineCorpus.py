@@ -5,25 +5,43 @@ class CombineCorpus(BaseDataset):
         super().__init__(dataset_dir)
         # Need to change when using different dataset
         # [
-        self.emotions = ['frustrated',
+        # Full Version
+        # self.emotions = ['frustrated',
+        #     'neutral',
+        #     'happy',
+        #     'angry',
+        #     'surprise',
+        #     'sad',
+        #     'fear',
+        #     'disgust',
+        #     'contempt']
+        # 6emo version
+        self.emotions = [
             'neutral',
             'happy',
+            'sad',
             'angry',
             'surprise',
-            'sad',
-            'fear',
-            'disgust',
             'contempt']
 
+        # 6emo 10% version
+        self.sample_per_class = [3213, 1864, 602, 500, 269, 229]
+        self.train_counts = 6677
+        self.validation_counts = 1651
+        # 6emo Full version
+        # self.sample_per_class = [32131, 18645, 6016, 5003, 2687, 2287]
+        # self.train_counts = 66769
+        # self.validation_counts = 16504
+
         # 10% version
-        self.sample_per_class = [8, 3213, 1864, 500, 269, 602, 84, 118, 229]
-        self.train_counts = 6887
-        self.validation_counts = 1768
-        # ]
+        # self.sample_per_class = [8, 3213, 1864, 500, 269, 602, 84, 118, 229]
+        # self.train_counts = 6887
+        # self.validation_counts = 1768
         # Full version
         # self.sample_per_class = [76, 32131, 18645, 5003, 2687, 6016, 844, 1184, 2287]
         # self.train_counts = 68873
         # self.validation_counts = 17670
+        # ]
         self.test_counts = 45462
 
     def emotion_to_onehot(self, meta_data):

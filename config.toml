@@ -25,8 +25,14 @@ PATH_TO_AUDIO='/datas/store162/othsueh/CREMA-D/AudioWAV'
 
 [TOTAL]
 # 10% Version
-PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_eps0.045_small.csv'
-PATH_TO_DATASET='/datas/store162/othsueh/webdataset_total_small'
+# PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_eps0.045_small.csv'
+# PATH_TO_DATASET='/datas/store162/othsueh/webdataset_total_small'
+# 6 10% Version
+PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_6emo_eps0.045_small.csv'
+PATH_TO_DATASET='/datas/store162/othsueh/webdataset_6_total_small'
+# 6 Full Version
+# PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_6emo_eps0.045.csv'
+# PATH_TO_DATASET='/datas/store162/othsueh/webdataset_6_total'
 # Full Version
 # PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_eps0.045.csv'
 # PATH_TO_DATASET='/datas/store162/othsueh/webdataset_total'
