@@ -1,10 +1,12 @@
+torch==2.7
+torchvision
+torchaudio
 dotenv
 datasets
 huggingface_hub
 seaborn
 soundfile
 scikit-learn
-torch
 tomli
 transformers
 wandb
