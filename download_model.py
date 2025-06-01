@@ -1,5 +1,5 @@
 from huggingface_hub import snapshot_download
-import tomllib
+import tomli
 from utils import *
 
 models = [
