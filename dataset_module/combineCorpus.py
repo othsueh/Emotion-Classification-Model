@@ -25,13 +25,13 @@ class CombineCorpus(BaseDataset):
             'contempt']
 
         # 6emo 10% version
-        self.sample_per_class = [3213, 1864, 602, 500, 269, 229]
-        self.train_counts = 6677
-        self.validation_counts = 1651
+        # self.sample_per_class = [3213, 1864, 602, 500, 269, 229]
+        # self.train_counts = 6677
+        # self.validation_counts = 1651
         # 6emo Full version
-        # self.sample_per_class = [32131, 18645, 6016, 5003, 2687, 2287]
-        # self.train_counts = 66769
-        # self.validation_counts = 16504
+        self.sample_per_class = [38393, 22712, 7679, 7402, 3639, 3448
+        self.train_counts = 66769
+        self.validation_counts = 16504
         # 6emo Full ORG
         # self.sample_per_class = [38592, 22951, 8021, 7794, 3920, 3846]
         # self.train_counts = 68620
