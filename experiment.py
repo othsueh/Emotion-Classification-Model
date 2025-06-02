@@ -9,7 +9,7 @@ from dataset_module import *
 
 sr = 16000
 
-def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rate,use_feature,length, total_steps,patience):
+def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rate,use_feature,use_gender,length, total_steps,patience):
     sample_per_class = dataset.sample_per_class
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     category_criterion = BalancedSoftmaxLoss(sample_per_class)
@@ -51,8 +51,14 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
             mem_preforward = torch.cuda.memory_allocated()
 
             audio = data["audio"]
+            gender = data["gender"]
+
             
-            category_output, dim_output = model(audio,sr)
+            if use_gender == True:
+                gender = gender.cuda()
+                category_output, dim_output = model(audio,sr,gender)
+            else:
+                category_output, dim_output = model(audio,sr)
 
             # Calculate forwarded memory usage
             mem_forward = torch.cuda.memory_allocated()
@@ -130,8 +136,13 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
                 av = av.cuda()
 
                 audio = data["audio"]
+                gender = data["gender"]
                 audio = audio.squeeze(1).cuda()
-                category_output, dim_output = model(audio,sr)
+
+                if use_gender == True:
+                    category_output, dim_output = model(audio,sr,gender)
+                else:
+                    category_output, dim_output = model(audio,sr)
 
                 cls_loss = category_criterion(category_output,true_label)
                 reg_loss, ccc_arousal, ccc_valence = dim_criterion(dim_output,av)
@@ -201,6 +212,7 @@ def run_experiment(model_type,device='cuda',**kwargs):
     corpus = kwargs.get('corpus','MSPPODCAST')
     seed = kwargs.get('seed',42)  
     use_feature = kwargs.get('use_feature',False)  
+    use_gender = kwargs.get('use_gender',False)  
     batch_size = kwargs.get('batch_size',16)
     epochs = kwargs.get('epoch',5)
     learning_rate = kwargs.get('learning_rate',5e-5)
@@ -212,14 +224,14 @@ def run_experiment(model_type,device='cuda',**kwargs):
     wandb.login(key=WANDB_TOKEN)
     run = wandb.init(
         project="Total Set",
-        tags=["Small set","Tune Downstream","Dual Head"], 
+        tags=["Small set","Gender Tune","Dual Head"], 
         config = {
             "seed": seed,
             "epochs": epochs,
             "batch_size": batch_size,
             "learning_rate": learning_rate,
             "use_feature": use_feature,
-            "use_emotion_embedding": kwargs.get('use_emotion_embedding',False),
+            "use_gender": use_gender,
             "dropout": kwargs.get('dropout',0.2),
             "model_type": model_type,
             "upstream_model": kwargs.get('upstream_model',"wav2vec2-large-960h"),
@@ -243,7 +255,39 @@ def run_experiment(model_type,device='cuda',**kwargs):
             classifier_output_dim=kwargs.get('classifier_output_dim', 8),
         )
         model = UpstreamFinetune(model_config,config["PATH_TO_PRETRAINED_MODELS"],device)
-
+    elif model_type == 'UpstreamTest1':
+        model_config = UpstreamFinetuneConfig(
+            origin_upstream_url=kwargs.get('origin_upstream_url',"facebook/wav2vec2-base-960h"),
+            upstream_model=kwargs.get('upstream_model', "wav2vec2-base-960h"),
+            finetune_layers=kwargs.get('finetune_layers', 2),
+            hidden_dim=kwargs.get('hidden_dim', 64),
+            dropout=kwargs.get('dropout', 0.2),
+            num_layers=kwargs.get('num_layers', 2),
+            classifier_output_dim=kwargs.get('classifier_output_dim', 8),
+        )
+        model = UpstreamTest1(model_config,config["PATH_TO_PRETRAINED_MODELS"],device)
+    elif model_type == 'UpstreamTest2':
+        model_config = UpstreamFinetuneConfig(
+            origin_upstream_url=kwargs.get('origin_upstream_url',"facebook/wav2vec2-base-960h"),
+            upstream_model=kwargs.get('upstream_model', "wav2vec2-base-960h"),
+            finetune_layers=kwargs.get('finetune_layers', 2),
+            hidden_dim=kwargs.get('hidden_dim', 64),
+            dropout=kwargs.get('dropout', 0.2),
+            num_layers=kwargs.get('num_layers', 2),
+            classifier_output_dim=kwargs.get('classifier_output_dim', 8),
+        )
+        model = UpstreamTest2(model_config,config["PATH_TO_PRETRAINED_MODELS"],device)
+    elif model_type == 'UpstreamTest3':
+        model_config = UpstreamFinetuneConfig(
+            origin_upstream_url=kwargs.get('origin_upstream_url',"facebook/wav2vec2-base-960h"),
+            upstream_model=kwargs.get('upstream_model', "wav2vec2-base-960h"),
+            finetune_layers=kwargs.get('finetune_layers', 2),
+            hidden_dim=kwargs.get('hidden_dim', 64),
+            dropout=kwargs.get('dropout', 0.2),
+            num_layers=kwargs.get('num_layers', 2),
+            classifier_output_dim=kwargs.get('classifier_output_dim', 8),
+        )
+        model = UpstreamTest3(model_config,config["PATH_TO_PRETRAINED_MODELS"],device)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
@@ -277,7 +321,7 @@ def run_experiment(model_type,device='cuda',**kwargs):
 
     total_training_steps = train_samples // batch_size * epochs
 
-    model, results = trainer(model,dataset,train_loader,valid_loader,epochs,batch_size,learning_rate,use_feature,length, total_training_steps, patience)
+    model, results = trainer(model,dataset,train_loader,valid_loader,epochs,batch_size,learning_rate,use_feature,use_gender,length, total_training_steps, patience)
 
     wandb.finish()
     

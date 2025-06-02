@@ -8,6 +8,10 @@ from utils import *
 class BaseDataset:
     def __init__(self,dataset_dir):
         self.dataset_dir = dataset_dir
+        self.genders = [
+            'Male',
+            'Female',
+            'Unknown']
         pass
     
     def index_to_emotion(self, index):
@@ -49,31 +53,61 @@ class BaseDataset:
     
     def emotion_to_onehot(self, meta_data):
         """
-        Convert emotion probabilities to one-hot encoded vector based on max probability.
+        Convert dominant emotion to one-hot encoded vector.
         
         Args:
-            meta_data (dict): Dictionary containing emotion probabilities
+            meta_data (dict): Dictionary containing dominant emotion
             
         Returns:
             torch.Tensor: One-hot encoded vector of shape (8,)
         """
+
         # Create a zero tensor of length 8 (number of emotions)
-        one_hot = torch.zeros(len(self.emotions))
+        one_hot = torch.zeros(len(self.emotions), dtype=torch.float32)
         
-        # Find emotion with maximum probability
-        max_emotion = None
-        max_probability = 0
-        for emo in self.emotions:
-            if meta_data[emo] > max_probability:
-                max_probability = meta_data[emo]
-                max_emotion = emo
+        # get the index of dominant emotion
+        emotion = meta_data['dominant_emotion']
         
-        # Set 1 at the index of the max emotion
-        if max_emotion is not None:
-            emotion_idx = self.emotions.index(max_emotion)
+        # Find the index of the emotion in our list
+        try:
+            emotion_idx = self.emotions.index(emotion)
+            # Set 1 at the index of the emotion
             one_hot[emotion_idx] = 1.0
+        except ValueError:
+            # Handle case where emotion is not in the list
+            print(f"Warning: Emotion '{emotion}' not found in emotion list")
             
-        return one_hot, max_emotion
+        return one_hot, emotion
+    
+    def gender_to_onehot(self, meta_data):
+        """
+        Convert gender to one-hot encoded vector.
+        
+        Args:
+            meta_data (dict): Dictionary containing gender
+            
+        Returns:
+            torch.Tensor: One-hot encoded vector of shape (8,)
+        """
+
+        # Create a zero tensor of length 3 (number of genders) with dtype float32
+        one_hot = torch.zeros(3, dtype=torch.float32)
+        
+        # get the index of gender
+        gender = meta_data['gender']
+        
+        # Find the index of the emotion in our list
+        try:
+            gender_idx = self.genders.index(gender)
+            # Set 1 at the index of the emotion
+            one_hot[gender_idx] = 1.0
+        except ValueError:
+            # Handle case where emotion is not in the list
+            print(f"Warning: Gender '{gender}' not found in emotion list")
+            
+        return one_hot, gender
+
+
     def get_collate_fn(self):
         """Return the collate function for this dataset type"""
         return collate_fn

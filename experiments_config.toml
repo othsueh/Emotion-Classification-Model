@@ -10,41 +10,17 @@ patience = 5
 verbose = true
 seed = 42
 hidden_dim = 64
-finetune_layers = 1
+finetune_layers = 3
 classifier_output_dim = 6
-num_layers = 2
+num_layers = 3
 use_feature = false
-use_emotion_embedding = false
+use_gender = true
 
 [[experiments]]
-name = "Wav2vec2 Down Head tune with small set (base config)"
-model_type = "UpstreamFinetune"
+name = "Wav2vec2 Down Head gender tune with small set"
+model_type = "UpstreamTest3"
 config = "base_config"
 # config_update = { hidden_dim = 32 }
-
-[[experiments]]
-name = "Wav2vec2 Down Head tune with small set (num layers: 3)"
-model_type = "UpstreamFinetune"
-config = "base_config"
-config_update = { num_layers = 3 }
-
-[[experiments]]
-name = "Wav2vec2 Down Head tune with small set (num layers: 4)"
-model_type = "UpstreamFinetune"
-config = "base_config"
-config_update = { num_layers = 4 }
-
-[[experiments]]
-name = "Wav2vec2 Down Head tune with small set (hidden dimension: 128)"
-model_type = "UpstreamFinetune"
-config = "base_config"
-config_update = { hidden_dim = 128 }
-
-[[experiments]]
-name = "Wav2vec2 Down Head tune with small set (hidden dimension: 256)"
-model_type = "UpstreamFinetune"
-config = "base_config"
-config_update = { hidden_dim = 256 }
 
 
 # Drop out test

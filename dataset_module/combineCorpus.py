@@ -29,7 +29,7 @@ class CombineCorpus(BaseDataset):
         # self.train_counts = 6677
         # self.validation_counts = 1651
         # 6emo Full version
-        self.sample_per_class = [38393, 22712, 7679, 7402, 3639, 3448
+        self.sample_per_class = [38393, 22712, 7679, 7402, 3639, 3448]
         self.train_counts = 66769
         self.validation_counts = 16504
         # 6emo Full ORG
@@ -48,33 +48,6 @@ class CombineCorpus(BaseDataset):
         # ]
         self.test_counts = 45462
 
-    def emotion_to_onehot(self, meta_data):
-        """
-        Convert dominant emotion to one-hot encoded vector.
-        
-        Args:
-            meta_data (dict): Dictionary containing dominant emotion
-            
-        Returns:
-            torch.Tensor: One-hot encoded vector of shape (8,)
-        """
-
-        # Create a zero tensor of length 8 (number of emotions)
-        one_hot = torch.zeros(len(self.emotions))
-        
-        # get the index of dominant emotion
-        emotion = meta_data['dominant_emotion']
-        
-        # Find the index of the emotion in our list
-        try:
-            emotion_idx = self.emotions.index(emotion)
-            # Set 1 at the index of the emotion
-            one_hot[emotion_idx] = 1.0
-        except ValueError:
-            # Handle case where emotion is not in the list
-            print(f"Warning: Emotion '{emotion}' not found in emotion list")
-            
-        return one_hot, emotion
         
     def get_collate_fn(self):
         """Custom collate function for this specific dataset type"""
@@ -84,6 +57,7 @@ class CombineCorpus(BaseDataset):
             
             categories = []
             avs = []
+            genders = []
             padded_audio = []
             
             # Find max length for padding
@@ -110,12 +84,15 @@ class CombineCorpus(BaseDataset):
                 # Get Label
                 one_hot, emotion_label = self.emotion_to_onehot(meta_data)
                 categories.append(one_hot)
+                gone_hot, gender = self.gender_to_onehot(meta_data)
+                genders.append(gone_hot)
                 av = torch.tensor([meta_data['EmoAct'], meta_data['EmoVal']], dtype=torch.float32)
                 avs.append(av)
             
             return {
                 'audio': torch.stack(padded_audio).float(),
-                'category': torch.stack(categories).float(),
+                'gender': torch.stack(genders),
+                'category': torch.stack(categories),
                 'av': torch.stack(avs),
             }
         

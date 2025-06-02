@@ -8,31 +8,34 @@ WHISPER = ['whisper-large-v3']
 AM = ['wavlm-large','hubert-xlarge-ls960-ft','wav2vec2-large-960h','wav2vec2-large-960h-lv60-self']
 
 [MSPPODCAST]
-PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/test/msp_podcast_test.csv'
+PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/6emo/test/msp_podcast_6emo.csv'
 PATH_TO_AUDIO='/datas/store162/othsueh/MSP-Podcast/Audios'
 PATH_TO_TRANSCRIPT='/datas/store162/othsueh/MSP-Podcast/Transcripts'
-PATH_TO_DATASET='/datas/store162/othsueh/webdataset_msppodcast'
+PATH_TO_DATASET='/datas/store162/othsueh/wds_6_test/MSP-Podcast'
 
 [IEMOCAP]
-PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/test/iemocap_test.csv'
+PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/6emo/test/iemocap_6emo.csv'
 PATH_TO_AUDIO='/datas/store162/othsueh/IEMOCAP/Audios'
-PATH_TO_DATASET='/datas/store162/othsueh/IEMOCAP'
+PATH_TO_DATASET='/datas/store162/othsueh/wds_6_test/IEMOCAP'
 
 [CREMAD]
-PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/test/crema_d_test.csv'
-PATH_TO_DATASET='/datas/store162/othsueh/CREMA-D'
+PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/6emo/test/crema_d_6emo.csv'
 PATH_TO_AUDIO='/datas/store162/othsueh/CREMA-D/AudioWAV'
+PATH_TO_DATASET='/datas/store162/othsueh/wds_6_test/CREMA-D'
 
 [TOTAL]
+# 6 emotions
+# 10% Version
+PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_6emo_eps0.045_small.csv'
+PATH_TO_DATASET='/datas/store162/othsueh/wds_6_exp_small'
+# Full Version
+# PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/6emo/train&val/train&val_6emo_original.csv'
+# PATH_TO_DATASET='/datas/store162/othsueh/wds_6_org'
+
+# Full emotions
 # 10% Version
 # PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_eps0.045_small.csv'
 # PATH_TO_DATASET='/datas/store162/othsueh/webdataset_total_small'
-# 6 10% Version
-PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_6emo_eps0.045_small.csv'
-PATH_TO_DATASET='/datas/store162/othsueh/webdataset_6_total_small'
-# 6 Full Version
-# PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_6emo_eps0.045.csv'
-# PATH_TO_DATASET='/datas/store162/othsueh/webdataset_6_total'
 # Full Version
 # PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_eps0.045.csv'
 # PATH_TO_DATASET='/datas/store162/othsueh/webdataset_total'

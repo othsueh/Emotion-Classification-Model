@@ -42,8 +42,8 @@ def process_shard(shard_info):
     # Process samples for this shard
     for idx, row in shard_df.iterrows():
         sample_id = row['FileName'].split('.')[0]
-        if(row['Corpus'] == 'MSP-IMPROV'):
-            continue
+        # if(row['Corpus'] == 'MSP-IMPROV'):
+        #     continue
         try:
             # Prepare the metadata
             metadata = {
@@ -70,8 +70,6 @@ def process_shard(shard_info):
                 audio_file_path = os.path.join(iemocap_path, f"{sample_id}.wav")  # Adjust extension if needed
             elif(row['Corpus'] == 'MSP-PODCAST'):
                 audio_file_path = os.path.join(podcast_path, f"{sample_id}.wav")  # Adjust extension if needed
-
-
             
             # Get transcription file path
             # trans_path = os.path.join(transcript_path, f"{sample_id}.txt")  # Adjust extension if needed
@@ -136,7 +134,7 @@ def main():
     
 
     # Test set only
-    # split_dir = f"{output_dir}/test"
+    # split_dir = f"{output_dir}"
     # os.makedirs(split_dir, exist_ok=True)
     # create_webdataset_shards(split_dir,"test",main_df,4000)
 
@@ -144,7 +142,6 @@ def main():
     # Group by split
     train_df = main_df[main_df['Split_Set'] == 'Train']
     dev_df = main_df[main_df['Split_Set'] == 'Development'] 
-    # test_df = main_df[main_df['Split_Set'] == 'Test']
 
     groups = [
         {
@@ -157,11 +154,6 @@ def main():
             'df': dev_df,
             'samples_per_shard': 4000
         },
-        # {
-        #     'name': 'test',
-        #     'df': test_df,
-        #     'samples_per_shard': 4000
-        # },
     ]
 
     for split in groups:
