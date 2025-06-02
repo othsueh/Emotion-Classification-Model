@@ -1,4 +1,4 @@
-PATH_TO_PRETRAINED_MODELS = "../FeatureExtraction/models/"
+PATH_TO_PRETRAINED_MODELS = "../FeatureExtraction/models/" #"../PretrainedModels/"
 PATH_TO_SAVED_MODELS = "./ckpt/"
 PATH_TO_PERFORMACE = "./PerformanceLog/"
 PATH_TO_CKPT = "./ckpt/"

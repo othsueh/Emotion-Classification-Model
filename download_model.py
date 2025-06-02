@@ -5,7 +5,8 @@ from utils import *
 models = [
     # {"model": "whisper-large-v3", "source": "openai/whisper-large-v3"},
     # {"model": "wav2vec2-large-960h", "source": "facebook/wav2vec2-large-960h"},
-    {"model": "wav2vec2-base-960h", "source": "facebook/wav2vec2-base-960h"},
+    # {"model": "wav2vec2-base-960h", "source": "facebook/wav2vec2-base-960h"},
+    {"model": "wav2vec2-base", "source": "facebook/wav2vec2-base"},
     # {"model": "hubert-xlarge-ls960-ft", "source": "facebook/hubert-xlarge-ls960-ft"},
     # {"model": "wavlm-large", "source": "microsoft/wavlm-large"},
     # {"model": "llama-2-7b", "source": "meta-llama/Llama-2-7b-hf"},
