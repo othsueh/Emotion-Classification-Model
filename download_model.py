@@ -6,7 +6,8 @@ models = [
     # {"model": "whisper-large-v3", "source": "openai/whisper-large-v3"},
     # {"model": "wav2vec2-large-960h", "source": "facebook/wav2vec2-large-960h"},
     # {"model": "wav2vec2-base-960h", "source": "facebook/wav2vec2-base-960h"},
-    {"model": "wav2vec2-base", "source": "facebook/wav2vec2-base"},
+    # {"model": "CombineCorpus_Gender", "source": "othsueh/CombineCorpus_Gender"},
+    {"model": "CombineCorpus_ORG", "source": "othsueh/CombineCorpus_ORG"},
     # {"model": "hubert-xlarge-ls960-ft", "source": "facebook/hubert-xlarge-ls960-ft"},
     # {"model": "wavlm-large", "source": "microsoft/wavlm-large"},
     # {"model": "llama-2-7b", "source": "meta-llama/Llama-2-7b-hf"},
@@ -18,11 +19,12 @@ models = [
 
 if __name__ == "__main__":
     output_dir = config["PATH_TO_PRETRAINED_MODELS"]
+    # output_dir = config["PATH_TO_SAVED_MODELS"]
     for m in models:
         new_dir = os.path.join(output_dir, m["model"])
         print(f'Checking {new_dir}')
         if not os.path.exists(new_dir):
             os.makedirs(new_dir)
         print('=' * 30 + f'\nDownloading {m["model"]}\n' + '=' * 30)
-        snapshot_download(m["source"], local_dir=new_dir, token=HUGGINGFACE_TOKEN)
+        snapshot_download(repo_id=m["source"],repo_type="model", local_dir=new_dir, token=HUGGINGFACE_TOKEN)
 

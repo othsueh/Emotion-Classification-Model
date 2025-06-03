@@ -50,8 +50,8 @@ New Update:
 New Dataset Experiment: 
     ✔ Remove the scheduler @done(25-05-24 15:19)
     ✔ Write new collate function for new dataset @done(25-05-24 15:19)
-    ☐ Wandb add new content
-    ☐ Test the new model archietecture
+    ✔ Wandb add new content @done(25-06-03 21:10)
+    ✔ Test the new model archietecture @done(25-06-03 21:10)
 
 
 

@@ -209,8 +209,9 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
 
 
 
-def run_experiment(model_type,device='cuda',**kwargs):
-    corpus = kwargs.get('corpus','MSPPODCAST')
+def run_test(model_type,device='cuda',**kwargs):
+    corpus = kwargs.get('corpus','None')
+    ckpt_name = kwargs.get('ckpt_name','None')
     seed = kwargs.get('seed',42)  
     use_feature = kwargs.get('use_feature',False)  
     use_gender = kwargs.get('use_gender',False)  
@@ -220,92 +221,75 @@ def run_experiment(model_type,device='cuda',**kwargs):
     verbose = kwargs.get('verbose',True)
     patience = kwargs.get('patience',5)
 
+    if ckpt_name == 'None' or corpus == 'None':
+        raise ValueError(f"Checkpoint Name or Corpus Name is Empty. ckpt_name : {ckpt_name}, corpus : {corpus}")
+
     torch.cuda.empty_cache()
+    print(kwargs.get('tags',["No Tags"]))
 
-    wandb.login(key=WANDB_TOKEN)
-    run = wandb.init(
-        project="Total Set",
-        tags=["Small set","Gender Tune","Dual Head"], 
-        config = {
-            "seed": seed,
-            "epochs": epochs,
-            "batch_size": batch_size,
-            "learning_rate": learning_rate,
-            "use_feature": use_feature,
-            "use_gender": use_gender,
-            "dropout": kwargs.get('dropout',0.2),
-            "model_type": model_type,
-            "upstream_model": kwargs.get('upstream_model',"wav2vec2-large-960h"),
-            "finetune_layers": kwargs.get('finetune_layers',1),
-            "hidden_dim": kwargs.get('hidden_dim',64),
-            "num_layers": kwargs.get('num_layers',2),
-            "classifier_output_dim": kwargs.get('classifier_output_dim', 8),
-        }
-    )
+    # wandb.login(key=WANDB_TOKEN)
+    # run = wandb.init(
+    #     project=corpus,
+    #     tags=kwargs.get('tags',["No Tags"]), 
+    #     config = {
+    #         "seed": seed,
+    #         "epochs": epochs,
+    #         "batch_size": batch_size,
+    #         "learning_rate": learning_rate,
+    #         "use_feature": use_feature,
+    #         "use_gender": use_gender,
+    #         "dropout": kwargs.get('dropout',0.2),
+    #         "model_type": model_type,
+    #         "upstream_model": kwargs.get('upstream_model',"wav2vec2-base"),
+    #         "finetune_layers": kwargs.get('finetune_layers',1),
+    #         "hidden_dim": kwargs.get('hidden_dim',64),
+    #         "num_layers": kwargs.get('num_layers',2),
+    #         "classifier_output_dim": kwargs.get('classifier_output_dim', 8),
+    #     }
+    # )
 
-    wandb.log({"mem/begin": torch.cuda.memory_allocated()})
+    # wandb.log({"mem/begin": torch.cuda.memory_allocated()})
 
     if model_type == 'UpstreamFinetune':
-        model_config = UpstreamFinetuneConfig(
-            origin_upstream_url=kwargs.get('origin_upstream_url',"facebook/wav2vec2-base-960h"),
-            upstream_model=kwargs.get('upstream_model', "wav2vec2-base-960h"),
-            finetune_layers=kwargs.get('finetune_layers', 2),
-            hidden_dim=kwargs.get('hidden_dim', 64),
-            dropout=kwargs.get('dropout', 0.2),
-            num_layers=kwargs.get('num_layers', 2),
-            classifier_output_dim=kwargs.get('classifier_output_dim', 8),
-        )
-        model = UpstreamFinetune(model_config,config["PATH_TO_PRETRAINED_MODELS"],device)
+        model_path = os.path.join(config["PATH_TO_SAVED_MODELS"], ckpt_name)
+        model = UpstreamFinetune.from_pretrained(model_path,config["PATH_TO_PRETRAINED_MODELS"],device=device)
     elif model_type == 'UpstreamGender':
-        model_config = UpstreamFinetuneConfig(
-            origin_upstream_url=kwargs.get('origin_upstream_url',"facebook/wav2vec2-base-960h"),
-            upstream_model=kwargs.get('upstream_model', "wav2vec2-base-960h"),
-            finetune_layers=kwargs.get('finetune_layers', 2),
-            hidden_dim=kwargs.get('hidden_dim', 64),
-            dropout=kwargs.get('dropout', 0.2),
-            num_layers=kwargs.get('num_layers', 2),
-            classifier_output_dim=kwargs.get('classifier_output_dim', 8),
-        )
-        model = UpstreamGender(model_config,config["PATH_TO_PRETRAINED_MODELS"],device)
+        model_path = os.path.join(config["PATH_TO_SAVED_MODELS"], ckpt_name)
+        model = UpstreamGender.from_pretrained(model_path,config["PATH_TO_PRETRAINED_MODELS"],device=device)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
-
-    wandb.log({"mem/model_begin": torch.cuda.memory_allocated()})
+    print("Load model success!")
+    # wandb.log({"mem/model_begin": torch.cuda.memory_allocated()})
     
     
-    # Set random seeds for reproducibility
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
+    # # Set random seeds for reproducibility
+    # torch.manual_seed(seed)
+    # np.random.seed(seed)
+    # random.seed(seed)
 
-    # Dataset Preparation (Just need to load webdataset)
-    dataset = CombineCorpus(config[corpus]['PATH_TO_DATASET'])
-    train_samples = dataset.train_counts
-    val_samples = dataset.validation_counts
-    train_loader = dataset.create_dataloader('train',batch_size)
-    valid_loader = dataset.create_dataloader('validation',batch_size)
+    # # Dataset Preparation (Just need to load webdataset)
+    # dataset = CombineCorpus(config[corpus]['PATH_TO_DATASET'])
+    # train_samples = dataset.train_counts
+    # val_samples = dataset.validation_counts
+    # train_loader = dataset.create_dataloader('train',batch_size)
+    # valid_loader = dataset.create_dataloader('validation',batch_size)
 
-    if verbose:
-        print(f'There are total {train_samples} train samples')
-        print(f'There are total {val_samples} validation samples')
-        numel_list = [p.numel() for p in model.parameters() if p.requires_grad]
-        total_params = sum(numel_list)
-        print(f"Total number of trainable parameters: {total_params:,}")
-        wandb.log({"model/trainable_parameters": total_params})
+    # if verbose:
+    #     print(f'There are total {train_samples} train samples')
+    #     print(f'There are total {val_samples} validation samples')
+    #     numel_list = [p.numel() for p in model.parameters() if p.requires_grad]
+    #     total_params = sum(numel_list)
+    #     print(f"Total number of trainable parameters: {total_params:,}")
+    #     wandb.log({"model/trainable_parameters": total_params})
 
-    length = {
-        "train": train_samples // batch_size + 1,
-        "val": val_samples // batch_size + 1
-    }
+    # length = {
+    #     "train": train_samples // batch_size + 1,
+    #     "val": val_samples // batch_size + 1
+    # }
 
-    total_training_steps = train_samples // batch_size * epochs
+    # total_training_steps = train_samples // batch_size * epochs
 
-    model, results = trainer(model,dataset,train_loader,valid_loader,epochs,batch_size,learning_rate,use_feature,use_gender,length, total_training_steps, patience)
+    # model, results = trainer(model,dataset,train_loader,valid_loader,epochs,batch_size,learning_rate,use_feature,use_gender,length, total_training_steps, patience)
 
-    wandb.finish()
+    # wandb.finish()
     
-    # Save the best model
-    save_path = config["PATH_TO_SAVED_MODELS"]
-    model_path = os.path.join(save_path,run.name)
-    model.save_pretrained(model_path)
-    print(f"Best model saved to {model_path}")

@@ -9,18 +9,26 @@ dropout = 0.2
 patience = 5
 verbose = true
 seed = 42
+tags = ["Small set","Gender Tune","Dual Head"]
 hidden_dim = 64
 finetune_layers = 3
 classifier_output_dim = 6
 num_layers = 3
 use_feature = false
 use_gender = true
+ckpt_name = "None"
 
 [[experiments]]
-name = "Wav2vec2 Down Head gender tune with small set"
-model_type = "UpstreamTest3"
+name = "Testing"
+model_type = "UpstreamGender"
 config = "base_config"
-# config_update = { hidden_dim = 32 }
+config_update = { ckpt_name = "CombineCorpus_Gender", tags = ["hello world"] }
+
+[[experiments]]
+name = "Testing"
+model_type = "UpstreamFinetune"
+config = "base_config"
+config_update = { ckpt_name = "CombineCorpus_ORG", tags = ["heee"] }
 
 
 # Drop out test

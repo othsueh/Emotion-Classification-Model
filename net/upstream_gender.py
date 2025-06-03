@@ -10,62 +10,7 @@ import torch.nn.functional as F
 import os
 from transformers import PretrainedConfig, PreTrainedModel, AutoProcessor, AutoModel
 from safetensors.torch import load_file
-
-class UpstreamFinetuneConfig(PretrainedConfig):
-    model_type = "wav2vec2-emodualhead"
-    def __init__(
-        self,
-        origin_upstream_url = "facebook/wav2vec2-base",
-        upstream_model="wav2vec2-base",  # Reference to base model
-        finetune_layers = 0 , # Prevent overhead gpu usage
-        hidden_dim = 64, 
-        dropout=0.2, 
-        num_layers=2, 
-        classifier_output_dim=8,
-        regressor_output_dim=2,
-        **kwargs
-    ):
-        self.origin_upstream_url = origin_upstream_url
-        self.upstream_model = upstream_model
-        self.dropout = dropout
-        self.finetune_layers = finetune_layers
-        self.num_layers = num_layers
-        self.hidden_dim = hidden_dim
-        self.classifier_output_dim = classifier_output_dim
-        self.regressor_output_dim = regressor_output_dim
-        super().__init__(**kwargs)
-
-class RegressionHead(nn.Module):
-    def __init__(self,first_dim,hidden_dim,dropout, num_layers, min_score = 0.0, max_score = 1.0):
-        super().__init__()
-        self.min_score = min_score
-        self.max_score = max_score
-
-        layers = []
-        input_dim = first_dim
-        for i in range(num_layers):
-            linear = nn.Linear(input_dim, hidden_dim)
-            
-            layers.extend([
-                linear,
-                nn.Tanh(),
-                nn.Dropout(dropout)
-            ])
-            input_dim = hidden_dim
-            
-        # Final classification layer
-        final_layer = nn.Linear(hidden_dim, 2)
-        nn.init.xavier_uniform_(final_layer.weight)
-        nn.init.zeros_(final_layer.bias)
-        layers.append(final_layer)
-        
-        self.regressor = nn.Sequential(*layers)
-
-    def forward(self,x):
-        output = self.regressor(x)
-        output = torch.sigmoid(output) * (self.max_score - self.min_score) + self.min_score
-        return output
-
+from .upstream_finetune import UpstreamFinetuneConfig
 
 class ClassificationHead(nn.Module):
     def __init__(self, first_dim, hidden_dim, dropout, num_layers, num_labels):
@@ -118,7 +63,7 @@ class HierarchicalDCRegressionHeadWithGender(nn.Module):
 
 
 
-class UpstreamTest3(PreTrainedModel):
+class UpstreamGender(PreTrainedModel):
     config_class = UpstreamFinetuneConfig
     def __init__(self, config, pretrained_path = None,device = None):
         super().__init__(config)
