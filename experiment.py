@@ -140,6 +140,7 @@ def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rat
                 audio = audio.squeeze(1).cuda()
 
                 if use_gender == True:
+                    gender = gender.cuda()
                     category_output, dim_output = model(audio,sr,gender)
                 else:
                     category_output, dim_output = model(audio,sr)
