@@ -49,7 +49,7 @@ class BaseDataset:
         if torch.is_tensor(indices):
             indices = indices.cpu().numpy()
         
-        return [self.index_to_emotion(idx) for idx in indices]
+        return [self.emotions[idx] for idx in indices]
     
     def emotion_to_onehot(self, meta_data):
         """
@@ -79,6 +79,20 @@ class BaseDataset:
             
         return one_hot, emotion
     
+    def batch_index_to_gender(self, indices):
+        """
+        Convert batch of indices to gender labels.
+        
+        Args:
+            indices (torch.Tensor or list): Batch of indices
+            
+        Returns:
+            list: List of gender labels
+        """
+        if torch.is_tensor(indices):
+            indices = indices.cpu().numpy()
+        
+        return [self.genders[idx] for idx in indices]
     def gender_to_onehot(self, meta_data):
         """
         Convert gender to one-hot encoded vector.
@@ -114,7 +128,10 @@ class BaseDataset:
     
     def create_dataloader(self, split='train', batch_size=32, num_workers=4, shuffle=True):
         # Pattern to match all shards for the split
-        pattern = f"{self.dataset_dir}/{split}/{split}-samples-*.tar"
+        if split == 'test': # For project use
+            pattern = f"{self.dataset_dir}/{split}-samples-*.tar"
+        else:
+            pattern = f"{self.dataset_dir}/{split}/{split}-samples-*.tar"
         
         # Check if the pattern exists
         matching_files = glob.glob(pattern)
@@ -144,47 +161,6 @@ class BaseDataset:
         )
         
         return loader
-    
-    def plot_confusion_matrix(self, predictions, true_labels, file_uni_name):
-        """
-        Plot confusion matrix for emotion predictions
-        Args:
-            predictions: list of predicted emotion labels
-            true_labels: list of true emotion labels
-        """
-        
-        # Create confusion matrix
-        confusion_matrix = np.zeros((8, 8))
-        for pred, true in zip(predictions, true_labels):
-            confusion_matrix[true][pred] += 1
-        # Normalize confusion matrix with handling for zero division
-        row_sums = confusion_matrix.sum(axis=1, keepdims=True)
-        # Add small epsilon to avoid division by zero
-        row_sums = np.where(row_sums == 0, 1e-10, row_sums)
-        confusion_matrix = confusion_matrix / row_sums
-        
-        # Plot confusion matrix
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(confusion_matrix, 
-                    annot=True, 
-                    fmt='.2f', 
-                    cmap=sns.cubehelix_palette(as_cmap=True),
-                    xticklabels=self.emotions,
-                    yticklabels=self.emotions)
-        plt.title('Emotion Prediction Confusion Matrix')
-        plt.xlabel('Predicted Emotion')
-        plt.ylabel('True Emotion')
-        plt.tight_layout()
-        plt.savefig(os.path.join(config['PATH_TO_PERFORMACE'],
-                    f'{file_uni_name}_confu.png'))
-        plt.close()
-    
-    def log_view_table(self, audios, sr, predicted, labels, arousal_valence, probs):
-        columns = ["Audio", "Predict", "Target", "Arousal", "Valence"] + self.emotions
-        table = wandb.Table(columns=columns)
-        for audio, pred, tar, aro_val, prob in zip(audios,predicted,labels,arousal_valence, probs):
-            table.add_data(wandb.Audio(audio,sample_rate=sr),indexToFullEmotion(pred),indexToFullEmotion(tar),aro_val[0],aro_val[1],*prob.numpy()) 
-        wandb.log({"predictions_table":table}, commit=False)
 
 # Sample collate function
 def collate_fn(batch):

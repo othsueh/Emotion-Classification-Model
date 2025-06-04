@@ -1,9 +1,8 @@
 from .base import *
 
-class MSPPodcast(BaseDataset):
+class CREMAD(BaseDataset):
     def __init__(self,dataset_dir):
         super().__init__(dataset_dir)
-
         # 6emo version (For project use)
         self.emotions = [
             'neutral',
@@ -12,7 +11,7 @@ class MSPPodcast(BaseDataset):
             'angry',
             'surprise',
             'contempt']
-        self.test_counts = 35154
+        self.test_counts = 1067
         # self.emotions = ['angry', 'sad', 'disgust', 'contempt', 'fear', 'neutral', 'surprise', 'happy']
         # self.sample_per_class = [6716,6400,16652,2992,1134,1419,2519,29144]
         # self.train_counts = 84030
@@ -26,7 +25,6 @@ class MSPPodcast(BaseDataset):
             audio_tensors = [item['audio'] for item in batch]
             
             categories = []
-            avs = []
             genders = []
             padded_audio = []
             
@@ -56,14 +54,11 @@ class MSPPodcast(BaseDataset):
                 categories.append(one_hot)
                 gone_hot, gender = self.gender_to_onehot(meta_data)
                 genders.append(gone_hot)
-                av = torch.tensor([meta_data['EmoAct'], meta_data['EmoVal']], dtype=torch.float32)
-                avs.append(av)
             
             return {
                 'audio': torch.stack(padded_audio).float(),
                 'gender': torch.stack(genders),
                 'category': torch.stack(categories),
-                'av': torch.stack(avs),
             }
         
         return sample_collate_fn

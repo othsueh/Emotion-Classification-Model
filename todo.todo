@@ -52,6 +52,16 @@ New Dataset Experiment:
     ✔ Write new collate function for new dataset @done(25-05-24 15:19)
     ✔ Wandb add new content @done(25-06-03 21:10)
     ✔ Test the new model archietecture @done(25-06-03 21:10)
+Test Loop Create:
+    ✔ Confirm the modified entries in `experiments_config.toml` @done(25-06-04 11:44)
+    ☐ Write `test.py`
+        ✔ Initial test loop @done(25-06-04 11:44)
+        ✔ new wandb log @done(25-06-04 12:24)
+        ✔ Test the loop of each dataset @done(25-06-04 13:53)
+        ☐ confusion matrix (discuss)
+    ✔ Write `iemocap.py` @done(25-06-04 12:14)
+    ✔ Write `crema-d.py` @done(25-06-04 12:14)
+    ✔ Adjust `msppodcast.py` (test count) @done(25-06-04 12:14)
 
 
 

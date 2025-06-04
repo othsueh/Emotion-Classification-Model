@@ -25,9 +25,7 @@ def main():
         print('='*30 + f"Experiment {exp_count}: {exp['name']}" + '='*30)
 
         if args.test:
-            # run_test(exp['model_type'], **exp_config)
             run_test(exp['model_type'],**exp_config)
-            print("Hi")
         else:
             run_experiment(exp['model_type'], **exp_config)
         exp_count += 1

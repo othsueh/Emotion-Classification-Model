@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import soundfile as sf
 import numpy as np
+import pandas as pd
 from torch.utils.data import DataLoader, Dataset, IterableDataset
 from display import format_time
 from dotenv import load_dotenv
@@ -35,6 +36,82 @@ def log_view_table(dataset, audios, sr, predicted, labels, arousal, valence, tru
     for audio, pred, tar, aro, val, trueav, prob in zip(audios,predicted,labels,arousal, valence, true_arousalAndValence ,probs):
         table.add_data(wandb.Audio(audio, sample_rate=sr),dataset.index_to_emotion(pred),dataset.index_to_emotion(tar),aro, val ,trueav[0], trueav[1],*prob.numpy())
     wandb.log({"predictions_table":table}, commit=False)
+
+def save_predictions_to_csv(dataset,predictions, corpus, ckpt_name, use_dim_emotion=True):
+    """
+    Save predictions and true labels to a CSV file.
+    
+    Args:
+        dataset: Dataset object
+        predictions: Dictionary with prediction data
+        corpus: Corpus name
+        ckpt_name: Checkpoint name
+        use_dim_emotion: Whether dimensional emotion is used
+    
+    Returns:
+        str: Path to the saved CSV file
+    """
+    # Create a DataFrame with the collected data
+    df = pd.DataFrame()
+    
+    # Add basic information
+    df['Gender'] = dataset.batch_index_to_gender(predictions['gender'])
+    df['true_emotion'] = dataset.batch_index_to_emotion(predictions['true_emotion'])
+    df['pred_emotion'] = dataset.batch_index_to_emotion(predictions['pred_emotion'])
+    
+    # Add dimensional emotion information if used
+    if use_dim_emotion:
+        df['true_EmoAct'] = predictions['true_EmoAct']
+        df['true_EmoVal'] = predictions['true_EmoVal']
+        df['pred_EmoAct'] = predictions['pred_EmoAct']
+        df['pred_EmoVal'] = predictions['pred_EmoVal']
+    
+    # Create file path
+    csv_filename = f"{corpus}_{ckpt_name}_6emo.csv"
+    csv_path = os.path.join(config['PATH_TO_PERFORMACE'], csv_filename)
+    
+    # Save to CSV
+    df.to_csv(csv_path, index=False)
+    
+    return csv_path
+
+def save_confusion_matrix(predictions, true_labels, class_labels, corpus, ckpt_name):
+    """
+    Plot confusion matrix for emotion predictions
+    Args:
+        predictions: list of predicted emotion labels
+        true_labels: list of true emotion labels
+    """
+    
+    # Create confusion matrix
+    total_lables = len(class_labels)
+    confusion_matrix = np.zeros((total_lables,total_lables))
+    for pred, true in zip(predictions, true_labels):
+        confusion_matrix[true][pred] += 1
+    # Normalize confusion matrix with handling for zero division
+    row_sums = confusion_matrix.sum(axis=1, keepdims=True)
+    # Add small epsilon to avoid division by zero
+    row_sums = np.where(row_sums == 0, 1e-10, row_sums)
+    confusion_matrix = confusion_matrix / row_sums
+    
+    # Plot confusion matrix
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(confusion_matrix, 
+                annot=True, 
+                fmt='.2f', 
+                cmap=sns.cubehelix_palette(as_cmap=True),
+                xticklabels=class_labels,
+                yticklabels=class_labels)
+    plt.title('Emotion Prediction Confusion Matrix')
+    plt.xlabel('Predicted Emotion')
+    plt.ylabel('True Emotion')
+    plt.tight_layout()
+    confu_filename = f'{corpus}_{ckpt_name}_confu.png'
+    confu_file_path = os.path.join(config['PATH_TO_PERFORMACE'], confu_filename)
+    plt.savefig(confu_file_path)
+    plt.close()
+    
+    return confu_file_path
 
 def mixup_data(text, audio, label, alpha=1.0):
 

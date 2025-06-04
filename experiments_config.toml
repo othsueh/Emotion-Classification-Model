@@ -1,4 +1,5 @@
 [base_config]
+project = "Test Performance"
 corpus = "TOTAL"
 origin_upstream_url = "facebook/wav2vec2-base"
 upstream_model = "wav2vec2-base"
@@ -18,18 +19,42 @@ use_feature = false
 use_gender = true
 ckpt_name = "None"
 
+# Entry needed to modify for test: project, ckpt_name, tags, model_type, use_gender, corpus
 [[experiments]]
-name = "Testing"
+name = "IEMOCAP with Gender"
 model_type = "UpstreamGender"
 config = "base_config"
-config_update = { ckpt_name = "CombineCorpus_Gender", tags = ["hello world"] }
+config_update = { corpus = "IEMOCAP", ckpt_name = "CombineCorpus_Gender", tags = ["Gender Tune"] }
 
 [[experiments]]
-name = "Testing"
+name = "CREMAD with Gender"
+model_type = "UpstreamGender"
+config = "base_config"
+config_update = { corpus = "CREMAD",ckpt_name = "CombineCorpus_Gender"}
+
+[[experiments]]
+name = "MSPPODCAST with Gender"
+model_type = "UpstreamGender"
+config = "base_config"
+config_update = { corpus = "MSPPODCAST",ckpt_name = "CombineCorpus_Gender"}
+
+[[experiments]]
+name = "IEMOCAP with Base"
 model_type = "UpstreamFinetune"
 config = "base_config"
-config_update = { ckpt_name = "CombineCorpus_ORG", tags = ["heee"] }
+config_update = { use_gender = false, corpus = "IEMOCAP", ckpt_name = "CombineCorpus_ORG", tags = ["Normal"] }
 
+[[experiments]]
+name = "CREMAD with Base"
+model_type = "UpstreamFinetune"
+config = "base_config"
+config_update = { corpus = "CREMAD",ckpt_name = "CombineCorpus_ORG"}
+
+[[experiments]]
+name = "MSPPODCAST with Base"
+model_type = "UpstreamFinetune"
+config = "base_config"
+config_update = { corpus = "MSPPODCAST",ckpt_name = "CombineCorpus_ORG"}
 
 # Drop out test
 

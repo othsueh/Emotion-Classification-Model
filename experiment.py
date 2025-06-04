@@ -9,7 +9,7 @@ from dataset_module import *
 
 sr = 16000
 
-def trainer(model,dataset,train_loader,val_loader,epochs,batch_size,learning_rate,use_feature,use_gender,length, total_steps,patience):
+def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gender,length,patience):
     sample_per_class = dataset.sample_per_class
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     category_criterion = BalancedSoftmaxLoss(sample_per_class)
@@ -298,9 +298,8 @@ def run_experiment(model_type,device='cuda',**kwargs):
         "val": val_samples // batch_size + 1
     }
 
-    total_training_steps = train_samples // batch_size * epochs
 
-    model, results = trainer(model,dataset,train_loader,valid_loader,epochs,batch_size,learning_rate,use_feature,use_gender,length, total_training_steps, patience)
+    model, results = trainer(model,dataset,train_loader,valid_loader,epochs,learning_rate,use_gender,length,patience)
 
     wandb.finish()
     
