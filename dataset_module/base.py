@@ -151,13 +151,17 @@ class BaseDataset:
 
         # Adjust number of workers based on available shards
         effective_workers = min(num_workers, max(1, len(matching_files)))
-
+        
+        # Set file system sharing strategy to avoid "Too many open files" error
+        torch.multiprocessing.set_sharing_strategy('file_system')
+        
         loader = DataLoader(
             dataset,
             batch_size=batch_size,
             num_workers=effective_workers,
             shuffle=False,
-            collate_fn=self.get_collate_fn()  # Use the collate function from the class
+            collate_fn=self.get_collate_fn(),  # Use the collate function from the class
+            persistent_workers=True if effective_workers > 0 else False  # Keep workers alive between batches
         )
         
         return loader

@@ -20,23 +20,23 @@ use_gender = true
 ckpt_name = "None"
 
 # Entry needed to modify for test: project, ckpt_name, tags, model_type, use_gender, corpus
-[[experiments]]
-name = "IEMOCAP with Gender"
-model_type = "UpstreamGender"
-config = "base_config"
-config_update = { corpus = "IEMOCAP", ckpt_name = "CombineCorpus_Gender", tags = ["Gender Tune"] }
+# [[experiments]]
+# name = "IEMOCAP with Gender"
+# model_type = "UpstreamGender"
+# config = "base_config"
+# config_update = { corpus = "IEMOCAP", ckpt_name = "CombineCorpus_Gender", tags = ["Gender Tune"] }
 
-[[experiments]]
-name = "CREMAD with Gender"
-model_type = "UpstreamGender"
-config = "base_config"
-config_update = { corpus = "CREMAD",ckpt_name = "CombineCorpus_Gender"}
+# [[experiments]]
+# name = "CREMAD with Gender"
+# model_type = "UpstreamGender"
+# config = "base_config"
+# config_update = { corpus = "CREMAD",ckpt_name = "CombineCorpus_Gender"}
 
 [[experiments]]
 name = "MSPPODCAST with Gender"
 model_type = "UpstreamGender"
 config = "base_config"
-config_update = { corpus = "MSPPODCAST",ckpt_name = "CombineCorpus_Gender"}
+config_update = { corpus = "MSPPODCAST",ckpt_name = "CombineCorpus_Gender", tags = ["Gender Tune"]}
 
 [[experiments]]
 name = "IEMOCAP with Base"
