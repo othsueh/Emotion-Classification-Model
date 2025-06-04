@@ -1,7 +1,6 @@
 import pandas as pd
 import torch.optim as optim
 from sklearn.metrics import f1_score, accuracy_score, recall_score
-from transformers import get_scheduler
 from utils import *
 from display import *
 from net import *
@@ -14,13 +13,6 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     category_criterion = BalancedSoftmaxLoss(sample_per_class)
     dim_criterion = CCCLoss()
-    # Scheduler commented out but kept for reference
-    # lr_scheduler = get_scheduler(
-    #     name="linear",                 
-    #     optimizer=optimizer,
-    #     num_warmup_steps=500,
-    #     num_training_steps=total_steps
-    # )
     batch_list = [0,1,2,3]
 
     # Early stopping variables
@@ -39,8 +31,12 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
         running_ccc_arousal = 0
         running_ccc_valence = 0
         train_length = length["train"]
-        model.train()
+        all_true_labels = []
+        all_pred_labels = []
+        all_true_av = []
+        all_pred_av = []
 
+        model.train()
         for batch_idx, data in enumerate(train_loader):
             
             category, av = data["category"], data["av"] # av not use in current model
@@ -73,8 +69,6 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
             mem_backward = torch.cuda.memory_allocated()
             optimizer.step()
             mem_optimizer = torch.cuda.memory_allocated()
-            # Scheduler step commented out
-            # lr_scheduler.step()
             
             mem_metrics = {
                 "mem/forward": mem_forward,
@@ -88,9 +82,13 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
             # For F1 score, accuracy, and UAR calculation
             pred = category_output.argmax(dim=1).cpu()
             true_label = torch.argmax(category, dim=1).cpu()
+            all_true_labels.extend(true_label)
+            all_pred_labels.extend(pred)
             running_macro_f1 += f1_score(true_label, pred, average='macro')
             running_acc += accuracy_score(true_label, pred)
             running_uar += recall_score(true_label, pred, average='macro',zero_division=0.0)
+            all_true_av.extend(av.cpu())
+            all_pred_av.extend(dim_output.cpu())
             running_ccc_arousal += ccc_arousal.item()
             running_ccc_valence += ccc_valence.item()
 
@@ -103,11 +101,10 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
                         running_ccc_arousal/(batch_idx+1), running_ccc_valence/(batch_idx+1)))
         
         avg_loss = train_loss / (batch_idx + 1)
-        avg_macro_f1 = running_macro_f1 / (batch_idx + 1) 
-        avg_acc = running_acc / (batch_idx + 1)
-        avg_uar = running_uar / (batch_idx + 1)
-        avg_arousal = running_ccc_arousal / (batch_idx + 1)
-        avg_valence = running_ccc_valence / (batch_idx + 1)
+        avg_macro_f1 = f1_score(all_true_labels,all_pred_labels,average='macro',zero_division=0.0)
+        avg_acc = accuracy_score(all_true_labels,all_pred_labels)
+        avg_uar = recall_score(all_true_labels,all_pred_labels,average='macro',zero_division=0.0)
+        reg_loss, avg_arousal, avg_valence = dim_criterion(all_pred_av,all_true_av)
         avg_ccc = (avg_arousal + avg_valence) / 2
 
         train_metric = {
@@ -126,6 +123,10 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
         running_ccc_arousal = 0
         running_ccc_valence = 0
         val_length = length["val"]
+        all_true_labels = []
+        all_pred_labels = []
+        all_true_av = []
+        all_pred_av = []
         model.eval()
 
         with torch.no_grad():
@@ -152,9 +153,13 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
                 
                 pred = category_output.argmax(dim=1).cpu()
                 true_label = torch.argmax(category, dim=1).cpu()
+                all_true_labels.extend(true_label)
+                all_pred_labels.extend(pred)
                 running_macro_f1 += f1_score(true_label, pred, average='macro')
                 running_acc += accuracy_score(true_label, pred)
                 running_uar += recall_score(true_label, pred, average='macro',zero_division=0.0)
+                all_true_av.extend(av.cpu())
+                all_pred_av.extend(dim_output.cpu())
                 running_ccc_arousal += ccc_arousal
                 running_ccc_valence += ccc_valence
 
@@ -170,11 +175,10 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
                         running_ccc_arousal/(batch_idx+1), running_ccc_valence/(batch_idx+1)))
             
         avg_loss = val_loss / (batch_idx + 1)
-        avg_macro_f1 = running_macro_f1 / (batch_idx + 1) 
-        avg_acc = running_acc / (batch_idx + 1)
-        avg_uar = running_uar / (batch_idx + 1)
-        avg_arousal = running_ccc_arousal / (batch_idx + 1)
-        avg_valence = running_ccc_valence / (batch_idx + 1)
+        avg_macro_f1 = f1_score(all_true_labels,all_pred_labels,average='macro',zero_division=0.0)
+        avg_acc = accuracy_score(all_true_labels,all_pred_labels)
+        avg_uar = recall_score(all_true_labels,all_pred_labels,average='macro',zero_division=0.0)
+        reg_loss, avg_arousal, avg_valence = dim_criterion(all_pred_av,all_true_av)
         avg_ccc = (avg_arousal + avg_valence) / 2
         
         val_metric = {
