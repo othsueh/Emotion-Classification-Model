@@ -26,8 +26,11 @@ PATH_TO_DATASET='/datas/store162/othsueh/wds_6_test/CREMA-D'
 [TOTAL]
 # 6 emotions
 # 10% Version
-PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_6emo_eps0.045_small.csv'
-PATH_TO_DATASET='/datas/store162/othsueh/wds_6_exp_small'
+# PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/newset/train&val_6emo_eps0.045_small.csv'
+# PATH_TO_DATASET='/datas/store162/othsueh/wds_6_exp_small'
+# EXP Version
+PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/6emo/train&val/train&val_6emo_eps0.045_min5.csv'
+PATH_TO_DATASET='/datas/store162/othsueh/wds_6_exp'
 # Full Version
 # PATH_TO_LABEL='/datas/store163/othsueh/Emo_analyze/6emo/train&val/train&val_6emo_original.csv'
 # PATH_TO_DATASET='/datas/store162/othsueh/wds_6_org'

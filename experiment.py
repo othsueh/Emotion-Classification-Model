@@ -41,6 +41,7 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
             
             category, av = data["category"], data["av"] # av not use in current model
             true_label = torch.argmax(category, dim=1).cuda()
+            all_true_av.extend(av.numpy())
             av = av.cuda()
 
             # Calculate preforward memory usage
@@ -60,7 +61,6 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
             mem_forward = torch.cuda.memory_allocated()
             
             cls_loss = category_criterion(category_output,true_label)
-            # !Debug
             reg_loss, ccc_arousal, ccc_valence = dim_criterion(dim_output,av)
             alpha,beta = 1, 1
             total_loss = alpha * reg_loss + beta * cls_loss
@@ -87,8 +87,7 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
             running_macro_f1 += f1_score(true_label, pred, average='macro')
             running_acc += accuracy_score(true_label, pred)
             running_uar += recall_score(true_label, pred, average='macro',zero_division=0.0)
-            all_true_av.extend(av.cpu())
-            all_pred_av.extend(dim_output.cpu())
+            all_pred_av.extend(dim_output.detach().cpu().numpy())
             running_ccc_arousal += ccc_arousal.item()
             running_ccc_valence += ccc_valence.item()
 
@@ -104,16 +103,16 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
         avg_macro_f1 = f1_score(all_true_labels,all_pred_labels,average='macro',zero_division=0.0)
         avg_acc = accuracy_score(all_true_labels,all_pred_labels)
         avg_uar = recall_score(all_true_labels,all_pred_labels,average='macro',zero_division=0.0)
-        reg_loss, avg_arousal, avg_valence = dim_criterion(all_pred_av,all_true_av)
-        avg_ccc = (avg_arousal + avg_valence) / 2
+        reg_loss, avg_ccc_arousal, avg_ccc_valence = dim_criterion(np.array(all_pred_av),np.array(all_true_av))
+        avg_ccc = (avg_ccc_arousal + avg_ccc_valence) / 2
 
         train_metric = {
             "train/loss": avg_loss,
             "train/macro_f1": avg_macro_f1,
             "train/accuracy": avg_acc,
             "train/uar": avg_uar,
-            "train/arousal": avg_arousal,
-            "train/valence": avg_valence,
+            "train/arousal": avg_ccc_arousal,
+            "train/valence": avg_ccc_valence,
             "train/avg_ccc": avg_ccc,
         }
 
@@ -134,6 +133,7 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
                 
                 category, av = data["category"], data["av"] # av not use in current model
                 true_label = torch.argmax(category, dim=1).cuda()
+                all_true_av.extend(av.numpy())
                 av = av.cuda()
 
                 audio = data["audio"]
@@ -158,8 +158,7 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
                 running_macro_f1 += f1_score(true_label, pred, average='macro')
                 running_acc += accuracy_score(true_label, pred)
                 running_uar += recall_score(true_label, pred, average='macro',zero_division=0.0)
-                all_true_av.extend(av.cpu())
-                all_pred_av.extend(dim_output.cpu())
+                all_pred_av.extend(dim_output.detach().cpu().numpy())
                 running_ccc_arousal += ccc_arousal
                 running_ccc_valence += ccc_valence
 
@@ -178,16 +177,16 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
         avg_macro_f1 = f1_score(all_true_labels,all_pred_labels,average='macro',zero_division=0.0)
         avg_acc = accuracy_score(all_true_labels,all_pred_labels)
         avg_uar = recall_score(all_true_labels,all_pred_labels,average='macro',zero_division=0.0)
-        reg_loss, avg_arousal, avg_valence = dim_criterion(all_pred_av,all_true_av)
-        avg_ccc = (avg_arousal + avg_valence) / 2
+        reg_loss, avg_ccc_arousal, avg_ccc_valence = dim_criterion(np.array(all_pred_av),np.array(all_true_av))
+        avg_ccc = (avg_ccc_arousal + avg_ccc_valence) / 2
         
         val_metric = {
             "val/loss": avg_loss,
             "val/macro_f1": avg_macro_f1,
             "val/accuracy": avg_acc,
             "val/uar": avg_uar,
-            "val/arousal": avg_arousal,
-            "val/valence": avg_valence,
+            "val/arousal": avg_ccc_arousal,
+            "val/valence": avg_ccc_valence,
             "val/avg_ccc": avg_ccc,
         }
 
@@ -215,8 +214,8 @@ def trainer(model,dataset,train_loader,val_loader,epochs,learning_rate,use_gende
 
 def run_experiment(model_type,device='cuda',**kwargs):
     corpus = kwargs.get('corpus','MSPPODCAST')
+    project = kwargs.get('project', None)
     seed = kwargs.get('seed',42)  
-    use_feature = kwargs.get('use_feature',False)  
     use_gender = kwargs.get('use_gender',False)  
     batch_size = kwargs.get('batch_size',16)
     epochs = kwargs.get('epoch',5)
@@ -228,14 +227,13 @@ def run_experiment(model_type,device='cuda',**kwargs):
 
     wandb.login(key=WANDB_TOKEN)
     run = wandb.init(
-        project="Total Set",
-        tags=["Small set","Gender Tune","Dual Head"], 
+        project=project,
+        tags=kwargs.get('tags', ["No Tags"]), 
         config = {
             "seed": seed,
             "epochs": epochs,
             "batch_size": batch_size,
             "learning_rate": learning_rate,
-            "use_feature": use_feature,
             "use_gender": use_gender,
             "dropout": kwargs.get('dropout',0.2),
             "model_type": model_type,
@@ -262,8 +260,8 @@ def run_experiment(model_type,device='cuda',**kwargs):
         model = UpstreamFinetune(model_config,config["PATH_TO_PRETRAINED_MODELS"],device)
     elif model_type == 'UpstreamGender':
         model_config = UpstreamFinetuneConfig(
-            origin_upstream_url=kwargs.get('origin_upstream_url',"facebook/wav2vec2-base-960h"),
-            upstream_model=kwargs.get('upstream_model', "wav2vec2-base-960h"),
+            origin_upstream_url=kwargs.get('origin_upstream_url',"facebook/wav2vec2-base"),
+            upstream_model=kwargs.get('upstream_model', "wav2vec2-base"),
             finetune_layers=kwargs.get('finetune_layers', 2),
             hidden_dim=kwargs.get('hidden_dim', 64),
             dropout=kwargs.get('dropout', 0.2),
@@ -283,7 +281,18 @@ def run_experiment(model_type,device='cuda',**kwargs):
     random.seed(seed)
 
     # Dataset Preparation (Just need to load webdataset)
-    dataset = CombineCorpus(config[corpus]['PATH_TO_DATASET'])
+
+    if corpus == 'TOTAL':
+        dataset = CombineCorpus(config[corpus]['PATH_TO_DATASET'])
+    elif corpus == 'MSPPODCAST':
+        dataset = MSPPodcast(config[corpus]['PATH_TO_DATASET']) 
+    elif corpus == 'IEMOCAP':
+        dataset = IEMOCAP(config[corpus]['PATH_TO_DATASET']) 
+    elif corpus == 'CREMAD':
+        use_dim_emotion = False
+        dataset = CREMAD(config[corpus]['PATH_TO_DATASET']) 
+    else:
+        raise ValueError(f"Unknown corpus: {corpus}")
     train_samples = dataset.train_counts
     val_samples = dataset.validation_counts
     train_loader = dataset.create_dataloader('train',batch_size)

@@ -20,9 +20,9 @@ class CCCLoss(nn.Module):
     def forward(self, pred, target):
         # Convert to tensor if not already
         if not isinstance(pred, torch.Tensor):
-            pred = torch.tensor(pred, dtype=torch.float32)
+            pred = torch.tensor(pred, dtype=torch.float32).clone()
         if not isinstance(target, torch.Tensor):
-            target = torch.tensor(target, dtype=torch.float32)
+            target = torch.tensor(target, dtype=torch.float32).clone()
             
         # Clone tensors to avoid modifying the originals
         pred = pred.clone()

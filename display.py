@@ -3,7 +3,7 @@ import datetime
 import time
 import sys
 
-# Uncomment when not use ipynb
+# Comment when using ipynb
 _, term_width = os.popen('stty size', 'r').read().split()
 term_width = int(term_width)
 

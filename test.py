@@ -106,6 +106,8 @@ def tester(model, test_loader, use_gender, use_dim_emotion, length, dataset):
     }
     
     if use_dim_emotion:
+        all_true_av = np.array(all_true_av) 
+        all_pred_av = np.array(all_pred_av) 
         reg_loss, avg_ccc_arousal, avg_ccc_valence = dim_criterion(all_pred_av,all_true_av)
         avg_ccc = (avg_ccc_arousal + avg_ccc_valence) / 2
         test_metric.update({
@@ -113,14 +115,12 @@ def tester(model, test_loader, use_gender, use_dim_emotion, length, dataset):
             "test/valence": avg_ccc_valence,
             "test/avg_ccc": avg_ccc,
         })
-        all_true_av_array = np.array(all_true_av) 
-        all_pred_av_array = np.array(all_pred_av) 
         # Add dimensional emotion data
         prediction_data.update({
-            "true_EmoAct": all_true_av_array[:,0],
-            "true_EmoVal": all_true_av_array[:,1],
-            "pred_EmoAct": all_pred_av_array[:,0],
-            "pred_EmoVal": all_pred_av_array[:,1],
+            "true_EmoAct": all_true_av[:,0],
+            "true_EmoVal": all_true_av[:,1],
+            "pred_EmoAct": all_pred_av[:,0],
+            "pred_EmoVal": all_pred_av[:,1],
         })
 
     wandb.log({**test_metric})
@@ -199,10 +199,10 @@ def run_test(model_type, device='cuda', **kwargs):
     prediction_data = tester(model, test_loader, use_gender, use_dim_emotion, length, dataset)
     
     # Save predictions to CSV
-    csv_path = save_predictions_to_csv(dataset, prediction_data, corpus, ckpt_name, use_dim_emotion)
-    print(f"Predictions saved to {csv_path}")
-    png_path = save_confusion_matrix(prediction_data['pred_emotion'],prediction_data['true_emotion'],dataset.emotions,corpus,ckpt_name)
-    print(f"Confusion matrix saved to {png_path}")
+    # csv_path = save_predictions_to_csv(dataset, prediction_data, corpus, ckpt_name, use_dim_emotion)
+    # print(f"Predictions saved to {csv_path}")
+    # png_path = save_confusion_matrix(prediction_data['pred_emotion'],prediction_data['true_emotion'],dataset.emotions,corpus,ckpt_name)
+    # print(f"Confusion matrix saved to {png_path}")
 
     wandb.finish()
     

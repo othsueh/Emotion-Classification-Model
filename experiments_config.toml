@@ -3,21 +3,33 @@ project = "Test Performance"
 corpus = "TOTAL"
 origin_upstream_url = "facebook/wav2vec2-base"
 upstream_model = "wav2vec2-base"
-epoch = 15
+epoch = 35
 batch_size = 16
 learning_rate = 5e-5
 dropout = 0.2
 patience = 5
 verbose = true
 seed = 42
-tags = ["Small set","Gender Tune","Dual Head"]
+tags = ["Full set","Exp","Dual Head"]
 hidden_dim = 64
 finetune_layers = 3
 classifier_output_dim = 6
 num_layers = 3
 use_feature = false
-use_gender = true
+use_gender = false
 ckpt_name = "None"
+
+# Remote
+[[experiments]]
+name = "Experiment Set retesting"
+model_type = "UpstreamFinetune"
+config = "base_config"
+
+# [[experiments]]
+# name = "Experiment Set retesting with Gender"
+# model_type = "UpstreamGender"
+# config = "base_config"
+# config_update = { use_gender=true, tags = ["Full set","Exp","Gender Head","Dual Head"]}
 
 # Entry needed to modify for test: project, ckpt_name, tags, model_type, use_gender, corpus
 # [[experiments]]
@@ -32,61 +44,27 @@ ckpt_name = "None"
 # config = "base_config"
 # config_update = { corpus = "CREMAD",ckpt_name = "CombineCorpus_Gender"}
 
-[[experiments]]
-name = "MSPPODCAST with Gender"
-model_type = "UpstreamGender"
-config = "base_config"
-config_update = { corpus = "MSPPODCAST",ckpt_name = "CombineCorpus_Gender", tags = ["Gender Tune"]}
-
-[[experiments]]
-name = "IEMOCAP with Base"
-model_type = "UpstreamFinetune"
-config = "base_config"
-config_update = { use_gender = false, corpus = "IEMOCAP", ckpt_name = "CombineCorpus_ORG", tags = ["Normal"] }
-
-[[experiments]]
-name = "CREMAD with Base"
-model_type = "UpstreamFinetune"
-config = "base_config"
-config_update = { corpus = "CREMAD",ckpt_name = "CombineCorpus_ORG"}
-
-[[experiments]]
-name = "MSPPODCAST with Base"
-model_type = "UpstreamFinetune"
-config = "base_config"
-config_update = { corpus = "MSPPODCAST",ckpt_name = "CombineCorpus_ORG"}
-
-# Drop out test
-
-# For remote running
 # [[experiments]]
-# name = "Wav2vec2 finetune (2 layers)"
+# name = "MSPPODCAST with Gender"
+# model_type = "UpstreamGender"
+# config = "base_config"
+# config_update = { corpus = "MSPPODCAST",ckpt_name = "CombineCorpus_Gender", tags = ["Gender Tune"]}
+
+# [[experiments]]
+# name = "IEMOCAP with Base"
 # model_type = "UpstreamFinetune"
 # config = "base_config"
-# config_update = { finetune_layers = 2 }
+# config_update = { use_gender = false, corpus = "IEMOCAP", ckpt_name = "CombineCorpus_ORG", tags = ["Normal"] }
 
 # [[experiments]]
-# name = "Wav2vec2 finetune (3 layers)"
+# name = "CREMAD with Base"
 # model_type = "UpstreamFinetune"
 # config = "base_config"
-# config_update = { finetune_layers = 3 }
+# config_update = { corpus = "CREMAD",ckpt_name = "CombineCorpus_ORG"}
 
 # [[experiments]]
-# name = "Wav2vec2 finetune (4 layers)"
+# name = "MSPPODCAST with Base"
 # model_type = "UpstreamFinetune"
 # config = "base_config"
-# config_update = { finetune_layers = 4 }
+# config_update = { corpus = "MSPPODCAST",ckpt_name = "CombineCorpus_ORG"}
 
-# [[experiments]]
-# # LSTM with multi-head attention
-# name = "LSTM with Multi-Head Attention (4 heads)"
-# model_type = "lstm_multihead"
-# config = "base_config"
-# config_update = { num_heads = 4 }
-
-# [[experiments]]
-# # Variations of hidden dimensions
-# name = "LSTM with Attention (32 Hidden Units)"
-# model_type = "lstm_attention"
-# config = "base_config"
-# config_update = { hidden_dim = 32 }
