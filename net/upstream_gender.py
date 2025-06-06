@@ -17,7 +17,7 @@ class ClassificationHead(nn.Module):
         super().__init__()
         self.hidden_layers = nn.Sequential(*[
             layer for i in range(num_layers)
-            for layer in (nn.Linear(first_dim if i == 0 else hidden_dim, hidden_dim), nn.Tanh(), nn.Dropout(dropout))
+            for layer in (nn.Linear(first_dim if i == 0 else hidden_dim, hidden_dim), nn.LeakyReLU(), nn.Dropout(dropout))
         ])
         self.out_proj = nn.Linear(hidden_dim, num_labels)
         self.embedding_dim = hidden_dim
@@ -36,7 +36,7 @@ class HierarchicalDCRegressionHeadWithGender(nn.Module):
         # Gender processing branch
         self.gender_proj = nn.Sequential(
             nn.Linear(gender_dim, classifier_embed_dim // 2),
-            nn.Tanh(),
+            nn.LeakyReLU(),
             nn.Dropout(dropout)
         )
         
@@ -44,10 +44,10 @@ class HierarchicalDCRegressionHeadWithGender(nn.Module):
         total_dim = classifier_embed_dim + cont_embed_dim + classifier_embed_dim // 2
         self.fusion_layer = nn.Sequential(
             nn.Linear(total_dim, cont_embed_dim),
-            nn.Tanh(),
+            nn.LeakyReLU(),
             nn.Dropout(dropout),
             nn.Linear(cont_embed_dim, cont_embed_dim // 2),
-            nn.Tanh(),
+            nn.LeakyReLU(),
             nn.Dropout(dropout),
             nn.Linear(cont_embed_dim // 2, 2)
         )
@@ -59,7 +59,8 @@ class HierarchicalDCRegressionHeadWithGender(nn.Module):
         # Three-way concatenation
         x = torch.cat([ed, ec, gender_embed], dim=-1)
         out = self.fusion_layer(x)
-        return torch.sigmoid(out) * (self.max_score - self.min_score) + self.min_score
+        # Original Sigmoid
+        return nn.ReLU(out) * (self.max_score - self.min_score) + self.min_score
 
 
 
@@ -91,7 +92,7 @@ class UpstreamGender(PreTrainedModel):
         self.classifier = ClassificationHead(input_dim, config.hidden_dim, config.dropout, config.num_layers, config.classifier_output_dim)
         self.cont_proj = nn.Sequential(
             nn.Linear(input_dim, config.hidden_dim),
-            nn.Tanh(),
+            nn.LeakyReLU(),
             nn.Dropout(config.dropout)
         )
         # Use modified regressor with gender fusion

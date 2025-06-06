@@ -29,13 +29,13 @@ class CombineCorpus(BaseDataset):
         # self.train_counts = 6677
         # self.validation_counts = 1651
         # 6emo Full version
-        self.sample_per_class = [38440, 22781, 7607, 7869, 3734, 3798]
-        self.train_counts = 67725
-        self.validation_counts = 16504
-        # 6emo Full ORG
-        # self.sample_per_class = [38592, 22951, 8021, 7794, 3920, 3846]
-        # self.train_counts = 68620
+        # self.sample_per_class = [38440, 22781, 7607, 7869, 3734, 3798]
+        # self.train_counts = 67725
         # self.validation_counts = 16504
+        # 6emo Full ORG
+        self.sample_per_class = [38592, 22951, 8021, 7794, 3920, 3846]
+        self.train_counts = 68620
+        self.validation_counts = 16504
 
         # 10% version
         # self.sample_per_class = [8, 3213, 1864, 500, 269, 602, 84, 118, 229]

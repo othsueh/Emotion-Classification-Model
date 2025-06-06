@@ -72,7 +72,7 @@ class ClassificationHead(nn.Module):
         super().__init__()
         self.hidden_layers = nn.Sequential(*[
             layer for i in range(num_layers)
-            for layer in (nn.Linear(first_dim if i == 0 else hidden_dim, hidden_dim), nn.Tanh(), nn.Dropout(dropout))
+            for layer in (nn.Linear(first_dim if i == 0 else hidden_dim, hidden_dim), nn.LeakyReLU(), nn.Dropout(dropout))
         ])
         self.out_proj = nn.Linear(hidden_dim, num_labels)
         self.embedding_dim = hidden_dim
@@ -89,7 +89,7 @@ class HierarchicalDCRegressionHead(nn.Module):
         self.max_score = max_score
         self.fusion_layer = nn.Sequential(
             nn.Linear(classifier_embed_dim + cont_embed_dim, cont_embed_dim),
-            nn.Tanh(),
+            nn.LeakyReLU(),
             nn.Dropout(dropout),
             nn.Linear(cont_embed_dim, 2)
         )
@@ -97,7 +97,8 @@ class HierarchicalDCRegressionHead(nn.Module):
     def forward(self, ed, ec):
         x = torch.cat([ed, ec], dim=-1)
         out = self.fusion_layer(x)
-        return torch.sigmoid(out) * (self.max_score - self.min_score) + self.min_score
+        # original sigmoid
+        return nn.ReLU(out) * (self.max_score - self.min_score) + self.min_score
 
 
 class UpstreamFinetune(PreTrainedModel):
@@ -128,7 +129,7 @@ class UpstreamFinetune(PreTrainedModel):
         self.classifier = ClassificationHead(input_dim, config.hidden_dim, config.dropout, config.num_layers, config.classifier_output_dim)
         self.cont_proj = nn.Sequential(
             nn.Linear(input_dim, config.hidden_dim),
-            nn.Tanh(),
+            nn.LeakyReLU(),
             nn.Dropout(config.dropout)
         )
         self.regressor = HierarchicalDCRegressionHead(

@@ -125,7 +125,6 @@ def tester(model, test_loader, use_gender, use_dim_emotion, length, dataset):
 
     wandb.log({**test_metric})
     return prediction_data
-
 def run_test(model_type, device='cuda', **kwargs):
     corpus = kwargs.get('corpus', None)
     project = kwargs.get('project', None)

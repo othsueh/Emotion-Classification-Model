@@ -95,7 +95,7 @@ def download_specific_file(dataset_name, filename, output_dir):
 def main():
     """
     Main function to execute the download process.
-    python download_dataset.py --dataset "othsueh/MSP-Podcast"
+    python download_dataset.py --dataset "othsueh/CombineCorpus_6_Org"
     
     """
     args = parse_arguments()

@@ -1,5 +1,5 @@
 [base_config]
-project = "Test Performance"
+project = "Total Set"
 corpus = "TOTAL"
 origin_upstream_url = "facebook/wav2vec2-base"
 upstream_model = "wav2vec2-base"
@@ -10,7 +10,7 @@ dropout = 0.2
 patience = 5
 verbose = true
 seed = 42
-tags = ["Full set","Exp","Dual Head"]
+tags = ["Full set","Org","Dual Head"]
 hidden_dim = 64
 finetune_layers = 3
 classifier_output_dim = 6
@@ -21,34 +21,34 @@ ckpt_name = "None"
 
 # Remote
 [[experiments]]
-name = "Experiment Set retesting"
+name = "Retraining with Leaky ReLU"
 model_type = "UpstreamFinetune"
 config = "base_config"
 
-# [[experiments]]
-# name = "Experiment Set retesting with Gender"
-# model_type = "UpstreamGender"
-# config = "base_config"
-# config_update = { use_gender=true, tags = ["Full set","Exp","Gender Head","Dual Head"]}
+[[experiments]]
+name = "Retraining with Leaky ReLU"
+model_type = "UpstreamGender"
+config = "base_config"
+config_update = { use_gender = true, tags = ["Full set","Gender Head","Dual Head"] }
 
 # Entry needed to modify for test: project, ckpt_name, tags, model_type, use_gender, corpus
 # [[experiments]]
-# name = "IEMOCAP with Gender"
-# model_type = "UpstreamGender"
+# name = "IEMOCAP with Exp"
+# model_type = "UpstreamFinetune"
 # config = "base_config"
-# config_update = { corpus = "IEMOCAP", ckpt_name = "CombineCorpus_Gender", tags = ["Gender Tune"] }
+# config_update = { corpus = "IEMOCAP", ckpt_name = "CombineCorpus_EXP", tags = ["Normal", "Exp"] }
 
 # [[experiments]]
-# name = "CREMAD with Gender"
-# model_type = "UpstreamGender"
+# name = "CREMAD with Exp"
+# model_type = "UpstreamFinetune"
 # config = "base_config"
-# config_update = { corpus = "CREMAD",ckpt_name = "CombineCorpus_Gender"}
+# config_update = { corpus = "CREMAD"}
 
 # [[experiments]]
-# name = "MSPPODCAST with Gender"
-# model_type = "UpstreamGender"
+# name = "MSPPODCAST with Exp"
+# model_type = "UpstreamFinetune"
 # config = "base_config"
-# config_update = { corpus = "MSPPODCAST",ckpt_name = "CombineCorpus_Gender", tags = ["Gender Tune"]}
+# config_update = { corpus = "MSPPODCAST"}
 
 # [[experiments]]
 # name = "IEMOCAP with Base"
